@@ -7,6 +7,9 @@
 #include <cstdint>
 #include <sstream>
 #include <string>
+#include <tuple>
+#include <unordered_set>
+#include <set>
 #include <vector>
 #include <unistd.h>
 
@@ -55,28 +58,40 @@ float randOffset() {
         return -(sizex/600.0)*std::pow(3, -randConst) + 1;
 }
 
+void mandelIterate(double& zr, double& zi, double cr, double ci) {
+    double zr2 = zr * zr;
+    double zi2 = zi * zi;
+
+    zi = 2 * zr * zi + ci;
+    zr = zr2 - zi2 + cr;
+}
+
 int computeMandel(int a, int b, int offset = sizex/75) {
     double cr = a / (sizex/4.0) - 0.5;
     double ci = b / (sizex/4.0);
     double zr = 0;
     double zi = 0;
+    double z2r = 0;
+    double z2i = 0;
     int iter = 1;
 
     while (iter < maxIter) {
-        double zr2 = zr * zr;
-        double zi2 = zi * zi;
-
-        if (zr2 + zi2 > 4) {
+        mandelIterate(zr, zi, cr, ci);
+        if (zr*zr + zi*zi > 4) {
             return 255-255*std::exp(-0.01*iter);
         }
-
-        zi = 2 * zr * zi + ci;
-        zr = zr2 - zi2 + cr;
-
         iter++;
+        mandelIterate(zr, zi, cr, ci);
+        if (zr*zr + zi*zi > 4) {
+            return 255-255*std::exp(-0.01*iter);
+        }
+        iter++;
+
+        mandelIterate(z2r, z2i, cr, ci);
+        if (z2r == zr && z2i == zi) break;
     }
-    return 0;
-    //return (int)(computeMandel(a-offset+0.2*randOffset(), b+randOffset(), offset * 1.33) * 0.8);
+    //return 0;
+    return (int)(computeMandel(a-offset+0.2*randOffset(), b+randOffset(), offset * 1.33) * 0.8);
 }
 
 std::vector<int> computeMandelLine(int b) {
