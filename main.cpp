@@ -62,7 +62,7 @@ int computeMandel(int a, int b, int offset = sizex/75) {
     double zi = 0;
     int iter = 1;
 
-    while (iter < 1024) {
+    while (iter < maxIter) {
         double zr2 = zr * zr;
         double zi2 = zi * zi;
 
@@ -114,7 +114,7 @@ int main(int, char**) {
         case ('4'):
             sizex =   3840;
             sizey =   2160;
-            maxIter = 1000;
+            maxIter = 2000;
             break;
         case ('5'):
             sizex =   7680;
@@ -135,8 +135,10 @@ int main(int, char**) {
             std::cin.clear();
     }
 
+    std::cout << sizex << " | " << sizey << " | " << maxIter << std::endl;
+
+
     printThreshold = std::sqrt(sizey);
-    auto start = std::chrono::high_resolution_clock::now();
 
     std::vector<colour8> data(sizex * sizey, {255, 255, 255});
     ThreadPool pool(std::thread::hardware_concurrency());
@@ -144,6 +146,7 @@ int main(int, char**) {
     std::vector<std::future<std::vector<int>>> iterMap;
     iterMap.reserve(sizey); // Each future represents a line.
 
+    auto start = std::chrono::high_resolution_clock::now();
     // Submit tasks for each line instead of each pixel
     for (int y = 0; y < sizey; ++y) {
         auto future = pool.addTask(
