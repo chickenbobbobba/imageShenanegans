@@ -96,47 +96,20 @@ int main(int, char**) {
     std::cout << "preset (1/2/3/4/5/6/c): ";
     std::cin >> preset;
     switch (preset) {
-        case ('1'):
-            sizex =   854;
-            sizey =   480;
-            maxIter = 50;
-            break;
-        case ('2'):
-            sizex =   1280;
-            sizey =   720;
-            maxIter = 100;
-            break;
-        case ('3'):
-            sizex =   1920;
-            sizey =   1080;
-            maxIter = 1000;
-            break;
-        case ('4'):
-            sizex =   3840;
-            sizey =   2160;
-            maxIter = 2000;
-            break;
-        case ('5'):
-            sizex =   7680;
-            sizey =   4320;
-            maxIter = 5000;
-            break;
-        case ('6'):
-            sizex =   15360;
-            sizey =   8640;
-            maxIter = 5000;
-            break;
+        case ('1'): sizex = 854; sizey = 480; maxIter = 50; break;
+        case ('2'): sizex = 1280; sizey = 720; maxIter = 100; break;
+        case ('3'): sizex = 1920; sizey = 1080; maxIter = 1000; break;
+        case ('4'): sizex = 3840; sizey = 2160; maxIter = 2000; break;
+        case ('5'): sizex = 7680; sizey = 4320; maxIter = 5000; break;
+        case ('6'): sizex = 15360; sizey = 8640; maxIter = 5000; break;
         default:
             std::cin.clear();
             std::cout << "(width/height/iterations):";
-            std::cin >> sizex;
-            std::cin >> sizey;
-            std::cin >> maxIter;
+            std::cin >> sizex; std::cin >> sizey; std::cin >> maxIter;
             std::cin.clear();
     }
 
     std::cout << sizex << " | " << sizey << " | " << maxIter << std::endl;
-
 
     printThreshold = std::sqrt(sizey);
 
@@ -147,7 +120,6 @@ int main(int, char**) {
     iterMap.reserve(sizey); // Each future represents a line.
 
     auto start = std::chrono::high_resolution_clock::now();
-    // Submit tasks for each line instead of each pixel
     for (int y = 0; y < sizey; ++y) {
         auto future = pool.addTask(
             [y]() { return computeMandelLine(y); }
@@ -168,6 +140,7 @@ int main(int, char**) {
 
     auto end = std::chrono::high_resolution_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
     std::cout << time.count()/1000 << "ms\nsave image? (y/n): ";
     char saveAns;
     std::cin >> saveAns;
