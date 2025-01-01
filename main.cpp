@@ -7,9 +7,6 @@
 #include <cstdint>
 #include <sstream>
 #include <string>
-#include <tuple>
-#include <unordered_set>
-#include <set>
 #include <vector>
 #include <unistd.h>
 
@@ -21,8 +18,14 @@ int maxIter;
 int printThreshold;
 
 std::string GetCurrentWorkingDir() {
-    char buff[FILENAME_MAX]; // or use _MAX_PATH for Windows
-    getcwd(buff, FILENAME_MAX); // or _getcwd(buff, FILENAME_MAX) for Windows
+    #ifdef __linux__
+    char buff[FILENAME_MAX];
+    getcwd(buff, FILENAME_MAX);
+    #endif
+    #ifdef __MINGW32__
+    char buff[_MAX_PATH];
+    getcwd(buff, FILENAME_MAX);
+    #endif
     return std::string(buff);
 }
 
@@ -155,7 +158,7 @@ int main(int, char**) {
     std::cout << time.count()/1000 << "ms\nsave image? (y/n): ";
     char saveAns;
     std::cin >> saveAns;
-    #ifdef __linux__ 
+    #ifdef __linux__ // windows users can do it themselves
     if (saveAns == 'y') {
         writeRawImg(sizex, sizey, data, maxIter);
         system("cjxl mandel.ppm -d 0.0 -e 7 -v mandel.jxl && rm mandel.ppm");
