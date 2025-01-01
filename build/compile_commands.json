@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/samb/vscode/imageShenanegans/build",
+  "command": "/usr/bin/c++   -g -o CMakeFiles/imageShenanegans.dir/main.cpp.o -c /home/samb/vscode/imageShenanegans/main.cpp",
+  "file": "/home/samb/vscode/imageShenanegans/main.cpp",
+  "output": "CMakeFiles/imageShenanegans.dir/main.cpp.o"
+},
+{
+  "directory": "/home/samb/vscode/imageShenanegans/build",
+  "command": "/usr/bin/c++   -g -o CMakeFiles/imageShenanegans.dir/threadPool.cpp.o -c /home/samb/vscode/imageShenanegans/threadPool.cpp",
+  "file": "/home/samb/vscode/imageShenanegans/threadPool.cpp",
+  "output": "CMakeFiles/imageShenanegans.dir/threadPool.cpp.o"
+}
+]

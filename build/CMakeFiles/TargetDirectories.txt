@@ -1,0 +1,3 @@
+/home/samb/vscode/imageShenanegans/build/CMakeFiles/imageShenanegans.dir
+/home/samb/vscode/imageShenanegans/build/CMakeFiles/edit_cache.dir
+/home/samb/vscode/imageShenanegans/build/CMakeFiles/rebuild_cache.dir
