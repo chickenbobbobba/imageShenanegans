@@ -36,11 +36,7 @@ void writeRawImg(std::int32_t width, std::int32_t height, const std::vector<colo
     std::stringstream header;
     header << "P6 " << width << " " << height << " 255\n";
 
-    std::ofstream file("mandel_" //+ 
-                        //std::to_string(width) + 
-                        //"x" + std::to_string(height) + 
-                        //"_" + std::to_string(iterations) + 
-                        ".ppm");
+    std::ofstream file("mandel.ppm");
     file << header.str();
     for (int i = 0; i < data.size(); i++) {
         file.put(data[i].r);
@@ -159,7 +155,10 @@ int main(int, char**) {
     std::cout << time.count()/1000 << "ms\nsave image? (y/n): ";
     char saveAns;
     std::cin >> saveAns;
+    #ifdef __linux__ 
     if (saveAns == 'y') {
         writeRawImg(sizex, sizey, data, maxIter);
+        system("cjxl mandel.ppm -d 0.0 -e 7 -v mandel.jxl && rm mandel.ppm");
     }
+    #endif
 }
