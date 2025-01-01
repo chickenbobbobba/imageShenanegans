@@ -50,9 +50,9 @@ void writeRawImg(std::int32_t width, std::int32_t height, const std::vector<colo
 float randOffset() {
     double randConst = (1-2*(double)rand()/(double)RAND_MAX);
     if (randConst > 0)
-        return (sizey/400.0)*std::pow(3, randConst) - 1;
+        return (sizex/600.0)*std::pow(3, randConst) - 1;
     else 
-        return -(sizey/400.0)*std::pow(3, -randConst) + 1;
+        return -(sizex/600.0)*std::pow(3, -randConst) + 1;
 }
 
 int computeMandel(int a, int b, int offset = sizex/75) {
@@ -75,8 +75,8 @@ int computeMandel(int a, int b, int offset = sizex/75) {
 
         iter++;
     }
-    //return 0;
-    return (int)(computeMandel(a-offset+0.2*randOffset(), b+randOffset(), offset * 1.33) * 0.8);
+    return 0;
+    //return (int)(computeMandel(a-offset+0.2*randOffset(), b+randOffset(), offset * 1.33) * 0.8);
 }
 
 std::vector<int> computeMandelLine(int b) {
@@ -165,7 +165,10 @@ int main(int, char**) {
 
     auto end = std::chrono::high_resolution_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << time.count()/1000 << "ms\n";
-
-    writeRawImg(sizex, sizey, data, maxIter);
+    std::cout << time.count()/1000 << "ms\nsave image? (y/n): ";
+    char saveAns;
+    std::cin >> saveAns;
+    if (saveAns == 'y') {
+        writeRawImg(sizex, sizey, data, maxIter);
+    }
 }

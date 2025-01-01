@@ -41,7 +41,7 @@ public:
         {
             std::lock_guard<std::mutex> lock(mutex);
             if (shutdownRequested) {
-                throw std::runtime_error("Cannot add task to stopped ThreadPool");
+                throw std::runtime_error("Cannot add tasks to a stopped ThreadPool");
             }
             
             tasks.push([task]() { (*task)(); });
