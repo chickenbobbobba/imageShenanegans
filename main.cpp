@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdint>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -89,7 +90,7 @@ int computeMandel(int a, int b, int offset = sizex/75) {
         mandelIterate(z2r, z2i, cr, ci);
         if (z2r == zr && z2i == zi) break;
     }
-    //return 0;
+    // return 0;
     return (int)(computeMandel(a-offset+0.2*randOffset(), b+randOffset(), offset * 1.33) * 0.8);
 }
 
@@ -101,6 +102,14 @@ std::vector<int> computeMandelLine(int b) {
         results.emplace_back(computeMandel(x, y, sizex / 75));
     }
     return results;
+}
+
+int findJumpSize(int x) {
+    int n = std::sqrt(x);
+    while (std::gcd(n, x) != 1) {
+        n++;
+    }
+    return n;
 }
 
 int main(int, char**) {
@@ -125,41 +134,45 @@ int main(int, char**) {
 
     std::cout << sizex << " | " << sizey << " | " << maxIter << std::endl;
 
-    printThreshold = std::sqrt(sizey);
-
     std::vector<colour8> data(sizex * sizey, {255, 255, 255});
     ThreadPool pool(std::thread::hardware_concurrency());
 
-    std::vector<std::future<std::vector<int>>> iterMap;
-    iterMap.reserve(sizey); // Each future represents a line.
-
     auto start = std::chrono::high_resolution_clock::now();
-    for (int y = 0; y < sizey; ++y) {
-        auto future = pool.addTask(
-            [y]() { return computeMandelLine(y); }
-        );
-        iterMap.emplace_back(std::move(future));
+
+    std::vector<std::future<std::vector<int>>> iterMap(sizey); // Store futures sequentially
+    std::vector<int> yMapping(sizey); // Track line indices for mapping
+
+    int jumpCount = findJumpSize(sizey);
+    std::cout << jumpCount << " gap\n";
+    
+    // Enqueue tasks
+    for (int x = 0; x < sizey; x++) {
+        int y = (x * jumpCount) % sizey;
+        iterMap[x] = pool.addTask([y]() { return computeMandelLine(y); });
+        yMapping[x] = y; // Track the mapping of task index to line index
     }
 
-    // Process the results
-    for (int y = 0; y < sizey; ++y) {
-        std::cout << "\rProgress: " << (100.0 * y / sizey) << "%                ";
-        auto line = iterMap[y].get(); // Get the computed line
+    // Process results
+    for (int i = 0; i < sizey; ++i) {
+        std::cout << "\rProgress: " << (100 - 100.0 * pool.getQueueSize() / sizey) << "%, " << pool.getQueueSize() << " tasks left          ";
+        auto line = iterMap[i].get(); // Access futures sequentially
+        int y = yMapping[i]; // Get the correct line index
         for (int x = 0; x < sizex; ++x) {
             std::uint8_t val = line[x];
-            data[y * sizex + x] = {val, val, val}; // Map to the 1D array
+            data[y * sizex + x] = {val, val, val}; // Map to the 1D array using the correct line index
         }
     }
+
     std::cout << std::endl;
 
     auto end = std::chrono::high_resolution_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-    std::cout << time.count()/1000 << "ms\nsave image? (y/n): ";
-    char saveAns;
-    std::cin >> saveAns;
+    // std::cout << time.count()/1000 << "ms\nsave image? (y/n): ";
+    // char saveAns;
+    // std::cin >> saveAns;
     #ifdef __linux__ // windows users can do it themselves
-    if (saveAns == 'y') {
+    if ('y' == 'y') {
         writeRawImg(sizex, sizey, data, maxIter);
         system("cjxl mandel.ppm -d 0.0 -e 7 -v mandel.jxl && rm mandel.ppm");
     }

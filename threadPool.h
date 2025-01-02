@@ -73,6 +73,10 @@ public:
         return threads.size();
     }
 
+    long getQueueSize() const {
+        return tasks.size();
+    }
+
 private:
     void workerFunction() {
         while (true) {
