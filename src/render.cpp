@@ -27,6 +27,7 @@ double offsetx  = 0;
 double offsety  = 0;
 double zoom     = 4;
 double gammaval = 0.01;
+bool computeNewFrame;
 
 void runGraphicsEngine()
 {
@@ -172,7 +173,7 @@ void runGraphicsEngine()
     {   
         glfwGetWindowSize(window, &scrwidth, &scrheight);
         auto status = completed.wait_for(std::chrono::seconds(0));
-        if (status == std::future_status::ready) {
+        if (status == std::future_status::ready && computeNewFrame == true) {
             if (!completed.get() == true) break;
             completed.share();
             oldscrwidth = scrwidth;
@@ -180,6 +181,7 @@ void runGraphicsEngine()
             completed = std::async(std::launch::async, [&]() {   
                 return computeMandel(scrwidth, scrheight, iters, data1, offsetx, offsety, zoom, gammaval, pool); 
             });
+            computeNewFrame = false;
         }
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, oldscrwidth, oldscrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.data());
         // input
@@ -206,7 +208,7 @@ void runGraphicsEngine()
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:
@@ -224,8 +226,10 @@ void runGraphicsEngine()
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
+        computeNewFrame = true;
+    }
 
 }
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
@@ -243,10 +247,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         zoom = zoom * 2;
         std::cout << offsetx << "|" << offsety << "|" << zoom << std::endl;
     }
+    computeNewFrame = true;
 }
 void scroll_callback(GLFWwindow* window, double scrollxoffset, double scrollyoffset) {
     if (scrollyoffset > 0) gammaval *= std::log(scrollyoffset);
     if (scrollyoffset < 0) gammaval /= std::log(-scrollyoffset);
+    computeNewFrame = true;
 }
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
@@ -255,4 +261,5 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+    computeNewFrame = true;
 }

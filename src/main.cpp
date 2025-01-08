@@ -44,15 +44,6 @@ void mandelIterate(double& zr, double& zi, double cr, double ci, double& zrsqu, 
     zr = zrsqu - zisqu + cr;
     zrsqu = zr * zr;
     zisqu = zi * zi;
-
-    /*
-    zrsqu = zr * zr;
-    zisqu = zi * zi;
-
-    zi = zr * zi;
-    zi += zi + ci;
-    zr = zrsqu - zisqu + cr;
-    */
 }
 
 int computeMandelPosition(int a, int b, int sizex, int maxIter, double offsetx, double offsety, double zoom, double gammaval) {
