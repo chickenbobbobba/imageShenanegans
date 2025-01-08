@@ -1,5 +1,3 @@
-//#include <chrono>
-#include <atomic>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
