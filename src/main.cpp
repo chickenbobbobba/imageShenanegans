@@ -1,4 +1,5 @@
 //#include <chrono>
+#include <atomic>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
@@ -11,7 +12,6 @@
 #include <vector>
 #include <unistd.h>
 
-#include "threadPool.h"
 #include "render.h"
 #include "main.h"
 
@@ -40,12 +40,21 @@ float randOffset(int sizex) {
         return -(sizex/600.0)*std::pow(3, -randConst) + 1;
 }
 
-void mandelIterate(double& zr, double& zi, double cr, double ci) {
-    double zr2 = zr * zr;
-    double zi2 = zi * zi;
+void mandelIterate(double& zr, double& zi, double cr, double ci, double& zrsqu, double& zisqu) {
+    zi = std::pow(zr + zi, 2) - zrsqu - zisqu;
+    zi += ci;
+    zr = zrsqu - zisqu + cr;
+    zrsqu = zr * zr;
+    zisqu = zi * zi;
 
-    zi = 2 * zr * zi + ci;
-    zr = zr2 - zi2 + cr;
+    /*
+    zrsqu = zr * zr;
+    zisqu = zi * zi;
+
+    zi = zr * zi;
+    zi += zi + ci;
+    zr = zrsqu - zisqu + cr;
+    */
 }
 
 int computeMandelPosition(int a, int b, int sizex, int maxIter, double offsetx, double offsety, double zoom, double gammaval) {
@@ -53,23 +62,27 @@ int computeMandelPosition(int a, int b, int sizex, int maxIter, double offsetx, 
     double ci = b / (sizex/zoom) + offsety;
     double zr = 0;
     double zi = 0;
+    double zrsqu;
+    double zisqu;
+    double z2rsqu;
+    double z2isqu;
     double z2r = 0;
     double z2i = 0;
     int iter = 1;
 
     while (iter < maxIter) {
-        mandelIterate(zr, zi, cr, ci);
-        if (zr*zr + zi*zi > 4) {
+        mandelIterate(zr, zi, cr, ci, zrsqu, zisqu);
+        if (zrsqu + zisqu > 4) {
             return 255-255*std::exp(-gammaval*iter);
         }
         iter++;
-        mandelIterate(zr, zi, cr, ci);
-        if (zr*zr + zi*zi > 4) {
+        mandelIterate(zr, zi, cr, ci, zrsqu, zisqu);
+        if (zrsqu + zisqu > 4) {
             return 255-255*std::exp(-gammaval*iter);
         }
         iter++;
 
-        mandelIterate(z2r, z2i, cr, ci);
+        mandelIterate(z2r, z2i, cr, ci, z2rsqu, z2isqu);
         if (z2r == zr && z2i == zi) return 0;
     }
     return 0;
@@ -95,10 +108,8 @@ int findJumpSize(int x) {
     return n;
 }
 
-bool computeMandel(int sizex, int sizey, int maxIter, std::vector<colour8>& data, double offsetx, double offsety, double zoom, double gammaval) {
-    std::cout << "starting render...\n";
-    ThreadPool pool(std::thread::hardware_concurrency());
-
+bool computeMandel(int sizex, int sizey, int maxIter, std::vector<colour8>& data, double offsetx, double offsety, double zoom, double gammaval, ThreadPool& pool) {
+    //std::cout << "starting render...\n";
     std::vector<std::future<std::vector<int>>> iterMap(sizey); // Store futures sequentially
     std::vector<int> yMapping(sizey); // Track line indices for mapping
 
@@ -111,7 +122,7 @@ bool computeMandel(int sizex, int sizey, int maxIter, std::vector<colour8>& data
         yMapping[x] = y; // Track the mapping of task index to line index
     }   // std::cout << std::endl;
 
-    std::cout << "tasks queued...\n";
+    //std::cout << "tasks queued...\n";
 
     for (int i = 0; i < sizey; ++i) {
         // std::cout << "\rProgress: " << (100 - 100.0 * pool.getQueueSize() / sizey) << "%, " << pool.getQueueSize() << " tasks left          ";
@@ -122,7 +133,6 @@ bool computeMandel(int sizex, int sizey, int maxIter, std::vector<colour8>& data
             data[y * sizex + x] = {val, val, val}; // Map to the 1D array using the correct line index
         }
     }
-    std::cout << "frame sent\n";
     return true;
 }
 

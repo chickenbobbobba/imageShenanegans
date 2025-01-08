@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "threadPool.h"
 
 
 struct colour8 {
@@ -11,5 +12,5 @@ struct colour8 {
 };
 
 
-bool computeMandel(int sizex, int sizey, int maxIter, std::vector<colour8>& data, double offsetx, double offsety, double zoom, double gammaval);
+bool computeMandel(int sizex, int sizey, int maxIter, std::vector<colour8>& data, double offsetx, double offsety, double zoom, double gammaval, ThreadPool& pool);
 std::string calcRawImg(int32_t width, int32_t height, const std::vector<colour8>& data);

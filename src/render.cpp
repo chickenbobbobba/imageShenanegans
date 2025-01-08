@@ -1,12 +1,15 @@
 #include "../src/glad/glad.h"
 #include <GLFW/glfw3.h>
 
+#include <chrono>
 #include <future>
 #include <iostream>
+#include <ratio>
 #include <stdexcept>
 #include <string>
 #include <cassert>
 #include <cmath>
+#include <thread>
 
 #include "utils.h"
 #include "render.h"
@@ -148,9 +151,11 @@ void runGraphicsEngine()
     int iters = 100000;
     int oldscrwidth, oldscrheight;
 
-    std::future<bool> completed = std::async(std::launch::async, 
+    ThreadPool pool(std::thread::hardware_concurrency());
+
+    auto completed = std::async(std::launch::async, 
         [&]() { 
-            return computeMandel(scrwidth, scrheight, iters, data1, offsetx, offsety, zoom, gammaval); 
+            return computeMandel(scrwidth, scrheight, iters, data1, offsetx, offsety, zoom, gammaval, pool); 
         });
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, scrwidth, scrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.data());
 
@@ -166,14 +171,16 @@ void runGraphicsEngine()
     while (!glfwWindowShouldClose(window))
     {   
         glfwGetWindowSize(window, &scrwidth, &scrheight);
-        if (completed.valid()) {
+        auto status = completed.wait_for(std::chrono::seconds(0));
+        if (status == std::future_status::ready) {
+            if (!completed.get() == true) break;
+            completed.share();
             oldscrwidth = scrwidth;
             oldscrheight = scrheight;
-            completed = std::async(std::launch::async, [&]() { 
-                return computeMandel(scrwidth, scrheight, iters, data1, offsetx, offsety, zoom, gammaval); 
+            completed = std::async(std::launch::async, [&]() {   
+                return computeMandel(scrwidth, scrheight, iters, data1, offsetx, offsety, zoom, gammaval, pool); 
             });
         }
-
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, oldscrwidth, oldscrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.data());
         // input
         // -----
@@ -199,6 +206,7 @@ void runGraphicsEngine()
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:
