@@ -9,12 +9,11 @@
 #include <sstream>
 #include <vector>
 #include <unistd.h>
-
+#include <mpfr.h>
 #include "render.h"
 #include "main.h"
 
 int printThreshold;
-
 
 void writeRawImg(std::int32_t width, std::int32_t height, const std::vector<colour8>& data) {
     std::stringstream header;
@@ -46,7 +45,10 @@ void mandelIterate(double& zr, double& zi, double cr, double ci, double& zrsqu, 
     zisqu = zi * zi;
 }
 
-int computeMandelPosition(int a, int b, int sizex, int maxIter, double offsetx, double offsety, double zoom, double gammaval) {
+HSVd computeMandelPosition(int a, int b, int sizex, int maxIter, double offsetx, double offsety, double zoom, double gammaval) {
+    //mpfr_t cr ci zr zi zrsqu zisqu z2rsqu z2isqu z2r z2i;
+    long bits = -std::log2(zoom/64);
+    bits = bits/32 * 32 + 64;
     double cr = a / (sizex/zoom) + offsetx;
     double ci = b / (sizex/zoom) + offsety;
     double zr = 0;
@@ -62,29 +64,71 @@ int computeMandelPosition(int a, int b, int sizex, int maxIter, double offsetx, 
     while (iter < maxIter) {
         mandelIterate(zr, zi, cr, ci, zrsqu, zisqu);
         if (zrsqu + zisqu > 4) {
-            return 255-255*std::exp(-gammaval*iter);
+            return {std::atan(zi/zr), 0.5*std::exp(-gammaval*iter), 1-std::exp(-gammaval*iter)};
         }
         iter++;
+        
         mandelIterate(zr, zi, cr, ci, zrsqu, zisqu);
         if (zrsqu + zisqu > 4) {
-            return 255-255*std::exp(-gammaval*iter);
+            return {std::atan(zi/zr), 0.5*std::exp(-gammaval*iter), 1-std::exp(-gammaval*iter)};
         }
         iter++;
 
         mandelIterate(z2r, z2i, cr, ci, z2rsqu, z2isqu);
-        if (z2r == zr && z2i == zi) return 0;
+
+        if (z2r == zr && z2i == zi) return {std::atan(z2i/z2r), 0, 1};
     }
-    return 0;
+    return {std::atan(zi/zr), 0, 1};
     // return (int)(computeMandel(a-offset+0.2*randOffset(), b+randOffset(), offset * 1.33) * 0.8);
 }
 
-std::vector<int> computeMandelLine(int b, int sizex, int sizey, int maxIter, double offsetx, double offsety, double zoom, double gammaval) {
-    std::vector<int> results;
+colour8 HSVtoRGB(float h, float s, float v) {
+    // Ensure h is within the range [0, 360)
+    h = fmod(h * 360 / 3.14159265, 360.0f);
+    if (h < 0) h += 360.0f;
+
+    float c = v * s; // Chroma
+    float x = c * (1 - fabs(fmod(h / 60.0f, 2) - 1)); // Second largest component
+    float m = v - c; // Match value for adjustment
+
+    float r, g, b;
+    if (h < 60) {
+        r = c; g = x; b = 0;
+    } else if (h < 120) {
+        r = x; g = c; b = 0;
+    } else if (h < 180) {
+        r = 0; g = c; b = x;
+    } else if (h < 240) {
+        r = 0; g = x; b = c;
+    } else if (h < 300) {
+        r = x; g = 0; b = c;
+    } else {
+        r = c; g = 0; b = x;
+    }
+
+    // Convert to 8-bit and apply match value
+    uint8_t red = static_cast<uint8_t>((r + m) * 255);
+    uint8_t green = static_cast<uint8_t>((g + m) * 255);
+    uint8_t blue = static_cast<uint8_t>((b + m) * 255);
+
+    // Return the colour8 struct with full alpha (255)
+    return { red, green, blue, 255 };
+}
+
+colour8 computeColour(HSVd hsv) {
+    // static_cast<uint8_t>(255-255*std::exp(-gammaval*iter)),
+    return {
+        HSVtoRGB(hsv.h, hsv.s, hsv.v)
+    };
+}
+
+std::vector<colour8> computeMandelLine(int b, int sizex, int sizey, int maxIter, double offsetx, double offsety, double zoom, double gammaval) {
+    std::vector<colour8> results;
     results.reserve(sizex);
     for (int i = 0; i < sizex; i++) {
         int x = i - sizex/2;
         int y = b - sizey/2;
-        results.emplace_back(computeMandelPosition(x, y, sizex, maxIter, offsetx, offsety, zoom, gammaval));
+        results.emplace_back(computeColour(computeMandelPosition(x, y, sizex, maxIter, offsetx, offsety, zoom, gammaval)));
     }
     return results;
 }
@@ -99,7 +143,7 @@ int findJumpSize(int x) {
 
 bool computeMandel(int sizex, int sizey, int maxIter, std::vector<colour8>& data, double offsetx, double offsety, double zoom, double gammaval, ThreadPool& pool) {
     //std::cout << "starting render...\n";
-    std::vector<std::future<std::vector<int>>> iterMap(sizey); // Store futures sequentially
+    std::vector<std::future<std::vector<colour8>>> iterMap(sizey); // Store futures sequentially
     std::vector<int> yMapping(sizey); // Track line indices for mapping
 
     int jumpCount = findJumpSize(sizey); // This jump evenly distributes the tasks across priorities
@@ -111,15 +155,13 @@ bool computeMandel(int sizex, int sizey, int maxIter, std::vector<colour8>& data
         yMapping[x] = y; // Track the mapping of task index to line index
     }   // std::cout << std::endl;
 
-    //std::cout << "tasks queued...\n";
-
     for (int i = 0; i < sizey; ++i) {
         // std::cout << "\rProgress: " << (100 - 100.0 * pool.getQueueSize() / sizey) << "%, " << pool.getQueueSize() << " tasks left          ";
         auto line = iterMap[i].get(); // Access futures sequentially
         int y = yMapping[i]; // Get the correct line index
         for (int x = 0; x < sizex; ++x) {
-            std::uint8_t val = line[x];
-            data[y * sizex + x] = {val, val, val}; // Map to the 1D array using the correct line index
+            colour8 val = line[x];
+            data[y * sizex + x] = val; // Map to the 1D array using the correct line index
         }
     }
     return true;

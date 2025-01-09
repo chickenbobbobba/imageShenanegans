@@ -174,6 +174,7 @@ void runGraphicsEngine()
         glfwGetWindowSize(window, &scrwidth, &scrheight);
         auto status = completed.wait_for(std::chrono::seconds(0));
         if (status == std::future_status::ready && computeNewFrame == true) {
+            computeNewFrame = false;
             if (!completed.get() == true) break;
             completed.share();
             oldscrwidth = scrwidth;
@@ -181,7 +182,6 @@ void runGraphicsEngine()
             completed = std::async(std::launch::async, [&]() {   
                 return computeMandel(scrwidth, scrheight, iters, data1, offsetx, offsety, zoom, gammaval, pool); 
             });
-            computeNewFrame = false;
         }
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, oldscrwidth, oldscrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.data());
         // input
@@ -208,7 +208,7 @@ void runGraphicsEngine()
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:
@@ -240,18 +240,18 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         glfwGetWindowSize(window, &windowx, &windowy);
         offsetx += zoom*(mousexpos-windowx/2.0)/windowx;
         offsety -= zoom*(mouseypos-windowy/2.0)/windowx;
-        zoom = zoom/2;
+        zoom = zoom/4;
         std::cout << offsetx << "|" << offsety << "|" << zoom << std::endl;
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-        zoom = zoom * 2;
+        zoom = zoom * 4;
         std::cout << offsetx << "|" << offsety << "|" << zoom << std::endl;
     }
     computeNewFrame = true;
 }
 void scroll_callback(GLFWwindow* window, double scrollxoffset, double scrollyoffset) {
-    if (scrollyoffset > 0) gammaval *= std::log(scrollyoffset);
-    if (scrollyoffset < 0) gammaval /= std::log(-scrollyoffset);
+    gammaval *= std::exp(scrollyoffset/20);
+    std::cout << gammaval << std::endl;
     computeNewFrame = true;
 }
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
