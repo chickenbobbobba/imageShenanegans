@@ -9,9 +9,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(glfw3 3.3 REQUIRED)
 find_package(OpenGL REQUIRED)
 
+set(CMAKE_BUILD_TYPE Debug)
 
 file(GLOB_RECURSE APP_SOURCES "src/*.c*")
 
 add_executable(imageShenanegans ${APP_SOURCES})
-
 target_link_libraries(imageShenanegans glfw OpenGL::GL mpfr gmp)

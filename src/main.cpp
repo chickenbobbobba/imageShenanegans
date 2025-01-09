@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <future>
+#include <gmp.h>
 #include <iostream>
 #include <fstream>
 #include <cstdint>
@@ -9,7 +10,8 @@
 #include <sstream>
 #include <vector>
 #include <unistd.h>
-#include <mpfr.h>
+//#include <mpfr.h>
+#include <gmpxx.h>
 #include "render.h"
 #include "main.h"
 
@@ -37,49 +39,103 @@ float randOffset(int sizex) {
         return -(sizex/600.0)*std::pow(3, -randConst) + 1;
 }
 
-void mandelIterate(double& zr, double& zi, double cr, double ci, double& zrsqu, double& zisqu) {
-    zi = std::pow(zr + zi, 2) - zrsqu - zisqu;
-    zi += ci;
-    zr = zrsqu - zisqu + cr;
-    zrsqu = zr * zr;
-    zisqu = zi * zi;
+void mandelIterate(mpf_t zr, mpf_t zi, const mpf_t cr, const mpf_t ci, mpf_t zrsqu, mpf_t zisqu, mpf_t temp) {
+    mpf_mul(zrsqu, zr, zr);
+    mpf_mul(zisqu, zi, zi);
+
+    mpf_add(temp, zr, zi);
+    mpf_mul(temp, temp, temp);
+    mpf_sub(temp, temp, zrsqu);
+    mpf_sub(temp, temp, zisqu);
+
+    mpf_sub(zr, zrsqu, zisqu);
+    mpf_add(zr, zr, cr);
+    mpf_add(zi, temp, ci);
 }
 
-HSVd computeMandelPosition(int a, int b, int sizex, int maxIter, double offsetx, double offsety, double zoom, double gammaval) {
-    //mpfr_t cr ci zr zi zrsqu zisqu z2rsqu z2isqu z2r z2i;
-    long bits = -std::log2(zoom/64);
+HSVd computeMandelPosition(mpf_t cr, mpf_t ci, mpf_t zoom, long long maxIter, double gammaval, mpf_t temp) {
+    mpf_t zr, zi, zrsqu, zisqu, z2rsqu, z2isqu, z2r, z2i, four, zero, inf, sixtyfour;
+    double tempd;
+    mpf_init_set_d(sixtyfour, 64);
+    mpf_div(temp, zoom, sixtyfour);
+    tempd = mpf_get_d(temp);
+    long bits = -std::log2(tempd);
+    bits = (bits >= 0) * bits;
     bits = bits/32 * 32 + 64;
-    double cr = a / (sizex/zoom) + offsetx;
-    double ci = b / (sizex/zoom) + offsety;
-    double zr = 0;
-    double zi = 0;
-    double zrsqu;
-    double zisqu;
-    double z2rsqu;
-    double z2isqu;
-    double z2r = 0;
-    double z2i = 0;
-    int iter = 1;
+    mpf_set_default_prec(bits);
 
+    // Set initial values
+    // mpf_init_set_d(cr, a / (sizex/zoom) + offsetx);
+    // mpf_init_set_d(ci, b / (sizex/zoom) + offsety);
+    mpf_init_set_d(zr, 0);
+    mpf_init_set_d(zi, 0);
+    mpf_init_set_d(zrsqu, 0);
+    mpf_init_set_d(zisqu, 0);
+    mpf_init_set_d(z2rsqu, 0);
+    mpf_init_set_d(z2isqu, 0);
+    mpf_init_set_d(z2r, 0);
+    mpf_init_set_d(z2i, 0);
+    mpf_init_set_d(four, 4);
+    mpf_init_set_d(zero, 0);
+    mpf_init_set_d(inf, 99999999999999999.9);
+    
+    long long iter = 0;
+    HSVd result;
+    
     while (iter < maxIter) {
-        mandelIterate(zr, zi, cr, ci, zrsqu, zisqu);
-        if (zrsqu + zisqu > 4) {
-            return {std::atan(zi/zr), 0.5*std::exp(-gammaval*iter), 1-std::exp(-gammaval*iter)};
+        mandelIterate(zr, zi, cr, ci, zrsqu, zisqu, temp);
+        mpf_add(temp, zrsqu, zisqu);
+        if (mpf_cmp(temp, four) > 0) {
+            if (mpf_cmp(zr, zero) != 0) mpf_div(temp, zi, zr);
+            else mpf_set(temp, inf);
+            tempd = mpf_get_d(temp);
+            result = {std::atan(tempd), 0.5*std::exp(-gammaval*iter), 1-std::exp(-gammaval*iter)};
+            goto cleanup;  // Jump to cleanup before returning
         }
         iter++;
         
-        mandelIterate(zr, zi, cr, ci, zrsqu, zisqu);
-        if (zrsqu + zisqu > 4) {
-            return {std::atan(zi/zr), 0.5*std::exp(-gammaval*iter), 1-std::exp(-gammaval*iter)};
+        mandelIterate(zr, zi, cr, ci, zrsqu, zisqu, temp);
+        mpf_add(temp, zrsqu, zisqu);
+        if (mpf_cmp(temp, four) > 0) {
+            if (mpf_cmp(zr, zero) != 0) mpf_div(temp, zi, zr);
+            else mpf_set(temp, inf);
+            tempd = mpf_get_d(temp);
+            result = {std::atan(tempd), 0.5*std::exp(-gammaval*iter), 1-std::exp(-gammaval*iter)};
+            goto cleanup;  // Jump to cleanup before returning
         }
         iter++;
-
-        mandelIterate(z2r, z2i, cr, ci, z2rsqu, z2isqu);
-
-        if (z2r == zr && z2i == zi) return {std::atan(z2i/z2r), 0, 1};
+        
+        mandelIterate(z2r, z2i, cr, ci, z2rsqu, z2isqu, temp);
+        if (mpf_cmp(z2r, zr) == 0 && mpf_cmp(z2i, zi) == 0) {
+            if (mpf_cmp(z2r, zero) != 0) mpf_div(temp, z2i, z2r);
+            else mpf_set(temp, inf);
+            tempd = mpf_get_d(temp);
+            result = {std::atan(tempd), 0, 1};
+            goto cleanup;  // Jump to cleanup before returning
+        }
     }
-    return {std::atan(zi/zr), 0, 1};
-    // return (int)(computeMandel(a-offset+0.2*randOffset(), b+randOffset(), offset * 1.33) * 0.8);
+    
+    if (mpf_cmp(zr, zero) != 0) mpf_div(temp, zi, zr);
+    else mpf_set(temp, inf);
+    tempd = mpf_get_d(temp);
+    result = {std::atan(tempd), 0, 1};
+
+cleanup:
+    // Clear all MPFR variables in reverse order of initialization
+    mpf_clear(four);
+    mpf_clear(temp);
+    mpf_clear(z2i);
+    mpf_clear(z2r);
+    mpf_clear(z2isqu);
+    mpf_clear(z2rsqu);
+    mpf_clear(zisqu);
+    mpf_clear(zrsqu);
+    mpf_clear(zi);
+    mpf_clear(zr);
+    mpf_clear(ci);
+    mpf_clear(cr);
+    
+    return result;
 }
 
 colour8 HSVtoRGB(float h, float s, float v) {
@@ -122,13 +178,20 @@ colour8 computeColour(HSVd hsv) {
     };
 }
 
-std::vector<colour8> computeMandelLine(int b, int sizex, int sizey, int maxIter, double offsetx, double offsety, double zoom, double gammaval) {
+std::vector<colour8> computeMandelLine(int b, int sizex, int sizey, long long maxIter, mpf_t offsetx, mpf_t offsety, mpf_t zoom, double gammaval) {
     std::vector<colour8> results;
-    results.reserve(sizex);
+    mpf_t x, y, temp;
+    mpf_init_set_si(temp, 0);
     for (int i = 0; i < sizex; i++) {
-        int x = i - sizex/2;
-        int y = b - sizey/2;
-        results.emplace_back(computeColour(computeMandelPosition(x, y, sizex, maxIter, offsetx, offsety, zoom, gammaval)));
+        mpf_init_set_si(x, i - sizex/2);
+        mpf_init_set_si(y, b - sizey/2);
+        mpf_init_set_si(temp, sizex);
+        mpf_div(temp, temp, zoom);
+        mpf_div(x, x, temp);
+        mpf_div(y, y, temp);
+        mpf_add(x, x, offsetx);
+        mpf_add(y, y, offsety);
+        results.emplace_back(computeColour(computeMandelPosition(x, y, zoom, maxIter, gammaval, temp)));
     }
     return results;
 }
@@ -141,8 +204,13 @@ int findJumpSize(int x) {
     return n;
 }
 
-bool computeMandel(int sizex, int sizey, int maxIter, std::vector<colour8>& data, double offsetx, double offsety, double zoom, double gammaval, ThreadPool& pool) {
-    //std::cout << "starting render...\n";
+bool computeMandel(int sizex, int sizey, long long maxIter, std::vector<colour8>& data, mpf_t offsetx, mpf_t offsety, mpf_t zoom, double gammaval, ThreadPool& pool) {
+    double zoomd = mpf_get_d(zoom);
+    long bitsl = -std::log2(zoomd);
+    bitsl = (bitsl >= 0) * bitsl;
+    bitsl = bitsl/32 * 32 + 64;
+    std::cout << "bits: " << bitsl << "\n";
+    
     std::vector<std::future<std::vector<colour8>>> iterMap(sizey); // Store futures sequentially
     std::vector<int> yMapping(sizey); // Track line indices for mapping
 

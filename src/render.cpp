@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <future>
+#include <gmp.h>
 #include <iostream>
 
 #include <stdexcept>
@@ -23,14 +24,18 @@ void processInput(GLFWwindow *window);
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
-double offsetx  = 0;
-double offsety  = 0;
-double zoom     = 4;
+mpf_t offsetx;
+mpf_t offsety;
+mpf_t zoom;
 double gammaval = 0.01;
+long long iters = 100;
 bool computeNewFrame;
 
 void runGraphicsEngine()
 {
+    mpf_init_set_d(offsetx, 0);
+    mpf_init_set_d(offsety, 0);
+    mpf_init_set_d(zoom, 4);
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -65,7 +70,7 @@ void runGraphicsEngine()
     }
 
     // build and compile our shader zprogram
-    // ------------------------------------
+    // -----------------------glfwSetWindowShouldClose(window, true);-------------
     Shader ourShader("../src/shaders/vertex.glsl", "../src/shaders/fragment.glsl");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
@@ -149,11 +154,10 @@ void runGraphicsEngine()
     glfwGetWindowSize(window, &scrwidth, &scrheight);
     std::vector<colour8> data1(scrwidth * scrheight * 16, {255, 255, 255});
 
-    int iters = 100000;
     int oldscrwidth, oldscrheight;
 
     ThreadPool pool(std::thread::hardware_concurrency());
-
+    
     auto completed = std::async(std::launch::async, 
         [&]() { 
             return computeMandel(scrwidth, scrheight, iters, data1, offsetx, offsety, zoom, gammaval, pool); 
@@ -230,22 +234,41 @@ void processInput(GLFWwindow *window)
         glfwSetWindowShouldClose(window, true);
         computeNewFrame = true;
     }
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        iters *= 1.5;
+        std::cout << "max iters: " << iters << std::endl;
+        computeNewFrame = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        std::cout << "max iters: " << iters << std::endl;
+        iters *= 0.66666;
+        computeNewFrame = true;
+    }
 
 }
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    mpf_t temp3, temp4, four;
+    mpf_init_set_d(four, 4);
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         double mousexpos, mouseypos;
         int windowx, windowy;
         glfwGetCursorPos(window, &mousexpos, &mouseypos);
         glfwGetWindowSize(window, &windowx, &windowy);
-        offsetx += zoom*(mousexpos-windowx/2.0)/windowx;
-        offsety -= zoom*(mouseypos-windowy/2.0)/windowx;
-        zoom = zoom/4;
-        std::cout << offsetx << "|" << offsety << "|" << zoom << std::endl;
+        double temp1 = (mousexpos-windowx/2.0)/windowx;
+        double temp2 = (mouseypos-windowy/2.0)/windowx;
+        mpf_init_set_d(temp3, temp1);
+        mpf_init_set_d(temp4, temp2);
+        mpf_mul(temp3, zoom, temp3);
+        mpf_mul(temp4, zoom, temp4);
+        mpf_add(offsetx, offsetx, temp3);
+        mpf_sub(offsety, offsety, temp4);
+
+        mpf_div(zoom, zoom, four);
+        gmp_printf("%#Fe | %#Fe | %#Fe\n", offsetx, offsety, zoom);
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-        zoom = zoom * 4;
-        std::cout << offsetx << "|" << offsety << "|" << zoom << std::endl;
+        mpf_mul(zoom, zoom, four);
+        gmp_printf("%#Fe | %#Fe | %#Fe\n", offsetx, offsety, zoom);
     }
     computeNewFrame = true;
 }

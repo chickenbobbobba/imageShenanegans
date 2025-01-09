@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "threadPool.h"
+#include <gmpxx.h>
 
 
 struct colour8 {
@@ -18,5 +19,5 @@ struct HSVd {
 };
 
 
-bool computeMandel(int sizex, int sizey, int maxIter, std::vector<colour8>& data, double offsetx, double offsety, double zoom, double gammaval, ThreadPool& pool);
+bool computeMandel(int sizex, int sizey, long long maxIter, std::vector<colour8>& data, mpf_t offsetx, mpf_t offsety, mpf_t zoom, double gammaval, ThreadPool& pool);
 std::string calcRawImg(int32_t width, int32_t height, const std::vector<colour8>& data);
