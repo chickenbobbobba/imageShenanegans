@@ -247,8 +247,8 @@ void processInput(GLFWwindow *window)
 
 }
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-    mpf_t temp3, temp4, four;
-    mpf_init_set_d(four, 4);
+    mpf_t temp3, temp4, zoomFactor;
+    mpf_init_set_d(zoomFactor, 5);
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         double mousexpos, mouseypos;
         int windowx, windowy;
@@ -263,11 +263,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         mpf_add(offsetx, offsetx, temp3);
         mpf_sub(offsety, offsety, temp4);
 
-        mpf_div(zoom, zoom, four);
+        mpf_div(zoom, zoom, zoomFactor);
         gmp_printf("%#Fe | %#Fe | %#Fe\n", offsetx, offsety, zoom);
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-        mpf_mul(zoom, zoom, four);
+        mpf_mul(zoom, zoom, zoomFactor);
         gmp_printf("%#Fe | %#Fe | %#Fe\n", offsetx, offsety, zoom);
     }
     computeNewFrame = true;

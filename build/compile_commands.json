@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/samb/vscode/mandelExplorer/build",
+  "command": "/usr/bin/c++   -g -o CMakeFiles/mandelExplorer.dir/main.cpp.o -c /home/samb/vscode/mandelExplorer/main.cpp",
+  "file": "/home/samb/vscode/mandelExplorer/main.cpp",
+  "output": "CMakeFiles/mandelExplorer.dir/main.cpp.o"
+}
+]

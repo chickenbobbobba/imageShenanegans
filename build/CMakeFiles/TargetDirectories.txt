@@ -1,0 +1,3 @@
+/home/samb/vscode/mandelExplorer/build/CMakeFiles/mandelExplorer.dir
+/home/samb/vscode/mandelExplorer/build/CMakeFiles/edit_cache.dir
+/home/samb/vscode/mandelExplorer/build/CMakeFiles/rebuild_cache.dir
