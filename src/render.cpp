@@ -192,8 +192,10 @@ void runGraphicsEngine()
 
             data1.resize(oldscrheight*oldscrwidth);
             pool.purge();
+            // ThreadPool mandelPool(std::thread::hardware_concurrency());
             completed = std::async(std::launch::async, [=, &data1, &pool]() {   
                 return computeMandel(oldscrwidth, oldscrheight, iters, data1, offsetx, offsety, zoom, gammaval, true, pool); 
+                // mandelPool.shutdown();
             });
         }
         // std::cout << "dfndsijbnfi----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << std::endl;

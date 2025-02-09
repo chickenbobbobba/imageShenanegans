@@ -190,9 +190,12 @@ void colourMandelScreenRegion(std::vector<colour8>& data,
     
     int counts = 0;
     if (colour.v == 0 || accurateColouring) {
-        for (int i = 0; i <= 0; i++) {
+        int stepsx = std::pow(toprightx-boleftx, 0.5);
+        int stepsy = std::pow(toprighty-bolefty, 0.5);
+        for (int i = 0; i < stepsx; i++) {
             if (counts > 0) break;
-            mpf_set_d(temp, (boleftx - scrWidth/2.0) / scrWidth);
+            double scrxpos = std::lerp(boleftx, toprightx, (float)i/stepsx);
+            mpf_set_d(temp, (scrxpos - scrWidth/2.0) / scrWidth);
             mpf_mul(temp, temp, zoom);
             mpf_add(cr, viewMidX, temp);
             mpf_set_d(temp, (bolefty - scrHeight/2.0) / scrWidth);
@@ -200,32 +203,35 @@ void colourMandelScreenRegion(std::vector<colour8>& data,
             mpf_add(ci, viewMidY, temp);
             if (computeMandelPosition(cr, ci, zoom, maxIter, gammaval, temp, accurateColouring).v != colour.v) counts++;
         }
-        for (int i = 0; i <= 0; i++) {
+        for (int i = 0; i < stepsy; i++) {
             if (counts > 0) break;
-            mpf_set_d(temp, (toprightx - scrWidth/2.0) / scrWidth);
-            mpf_mul(temp, temp, zoom);
-            mpf_add(cr, viewMidX, temp);
-            mpf_set_d(temp, (bolefty - scrHeight/2.0) / scrWidth);
-            mpf_mul(temp, temp, zoom);
-            mpf_add(ci, viewMidY, temp);
-            if (computeMandelPosition(cr, ci, zoom, maxIter, gammaval, temp, accurateColouring).v != colour.v) counts++;
-        }
-        for (int i = 0; i <= 0; i++) {
-            if (counts > 0) break;
+            double scrypos = std::lerp(bolefty, toprighty, (float)i/stepsy);
             mpf_set_d(temp, (boleftx - scrWidth/2.0) / scrWidth);
             mpf_mul(temp, temp, zoom);
             mpf_add(cr, viewMidX, temp);
+            mpf_set_d(temp, (scrypos - scrHeight/2.0) / scrWidth);
+            mpf_mul(temp, temp, zoom);
+            mpf_add(ci, viewMidY, temp);
+            if (computeMandelPosition(cr, ci, zoom, maxIter, gammaval, temp, accurateColouring).v != colour.v) counts++;
+        }
+        for (int i = 0; i < stepsx; i++) {
+            if (counts > 0) break;
+            double scrxpos = std::lerp(boleftx, toprightx, (float)i/stepsx);
+            mpf_set_d(temp, (scrxpos - scrWidth/2.0) / scrWidth);
+            mpf_mul(temp, temp, zoom);
+            mpf_add(cr, viewMidX, temp);
             mpf_set_d(temp, (toprighty - scrHeight/2.0) / scrWidth);
             mpf_mul(temp, temp, zoom);
             mpf_add(ci, viewMidY, temp);
             if (computeMandelPosition(cr, ci, zoom, maxIter, gammaval, temp, accurateColouring).v != colour.v) counts++;
         }
-        for (int i = 0; i <= 0; i++) {
+        for (int i = 0; i < stepsy; i++) {
             if (counts > 0) break;
+            double scrypos = std::lerp(bolefty, toprighty, (float)i/stepsy);
             mpf_set_d(temp, (toprightx - scrWidth/2.0) / scrWidth);
             mpf_mul(temp, temp, zoom);
             mpf_add(cr, viewMidX, temp);
-            mpf_set_d(temp, (toprighty - scrHeight/2.0) / scrWidth);
+            mpf_set_d(temp, (scrypos - scrHeight/2.0) / scrWidth);
             mpf_mul(temp, temp, zoom);
             mpf_add(ci, viewMidY, temp);
             if (computeMandelPosition(cr, ci, zoom, maxIter, gammaval, temp, accurateColouring).v != colour.v) counts++;
@@ -242,7 +248,7 @@ void colourMandelScreenRegion(std::vector<colour8>& data,
     depth++;
     if ((toprightx - boleftx) < 2 && (toprighty - bolefty) < 2) return;
 
-    if (toprightx-boleftx >= 10) {
+    if (toprightx-boleftx >= 0.5*log(scrWidth * scrHeight)) {
         int priority = -depth;
         // bottom left
         pool.addTask([=, &data, &pool]() {
