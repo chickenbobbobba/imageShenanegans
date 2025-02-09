@@ -1,8 +1,32 @@
 [
 {
   "directory": "/home/samb/vscode/mandelExplorer/build",
-  "command": "/usr/bin/c++   -g -o CMakeFiles/mandelExplorer.dir/main.cpp.o -c /home/samb/vscode/mandelExplorer/main.cpp",
-  "file": "/home/samb/vscode/mandelExplorer/main.cpp",
-  "output": "CMakeFiles/mandelExplorer.dir/main.cpp.o"
+  "command": "/usr/bin/cc   -g -o CMakeFiles/mandelExplorer.dir/src/glad.c.o -c /home/samb/vscode/mandelExplorer/src/glad.c",
+  "file": "/home/samb/vscode/mandelExplorer/src/glad.c",
+  "output": "CMakeFiles/mandelExplorer.dir/src/glad.c.o"
+},
+{
+  "directory": "/home/samb/vscode/mandelExplorer/build",
+  "command": "/usr/bin/clang++   -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/main.cpp.o -c /home/samb/vscode/mandelExplorer/src/main.cpp",
+  "file": "/home/samb/vscode/mandelExplorer/src/main.cpp",
+  "output": "CMakeFiles/mandelExplorer.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/samb/vscode/mandelExplorer/build",
+  "command": "/usr/bin/clang++   -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/render.cpp.o -c /home/samb/vscode/mandelExplorer/src/render.cpp",
+  "file": "/home/samb/vscode/mandelExplorer/src/render.cpp",
+  "output": "CMakeFiles/mandelExplorer.dir/src/render.cpp.o"
+},
+{
+  "directory": "/home/samb/vscode/mandelExplorer/build",
+  "command": "/usr/bin/clang++   -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/stb_image.cpp.o -c /home/samb/vscode/mandelExplorer/src/stb_image.cpp",
+  "file": "/home/samb/vscode/mandelExplorer/src/stb_image.cpp",
+  "output": "CMakeFiles/mandelExplorer.dir/src/stb_image.cpp.o"
+},
+{
+  "directory": "/home/samb/vscode/mandelExplorer/build",
+  "command": "/usr/bin/clang++   -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/utils.cpp.o -c /home/samb/vscode/mandelExplorer/src/utils.cpp",
+  "file": "/home/samb/vscode/mandelExplorer/src/utils.cpp",
+  "output": "CMakeFiles/mandelExplorer.dir/src/utils.cpp.o"
 }
 ]

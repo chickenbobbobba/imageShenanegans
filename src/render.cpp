@@ -30,10 +30,9 @@ mpf_t zoom;
 double gammaval = 0.01;
 long long iters = 100;
 bool computeNewFrame;
-
 void runGraphicsEngine()
 {
-    mpf_init_set_d(offsetx, 0);
+    mpf_init_set_d(offsetx, -0.75);
     mpf_init_set_d(offsety, 0);
     mpf_init_set_d(zoom, 4);
     // glfw: initialize and configure
@@ -152,16 +151,21 @@ void runGraphicsEngine()
     // load image, create texture
     int scrwidth, scrheight;
     glfwGetWindowSize(window, &scrwidth, &scrheight);
-    std::vector<colour8> data1(scrwidth * scrheight * 16, {255, 255, 255});
+    std::vector<colour8> data1(scrwidth * scrheight, {255, 255, 255});
 
     int oldscrwidth, oldscrheight;
 
     ThreadPool pool(std::thread::hardware_concurrency());
-    
-    auto completed = std::async(std::launch::async, 
-        [&]() { 
-            return computeMandel(scrwidth, scrheight, iters, data1, offsetx, offsety, zoom, gammaval, pool); 
-        });
+    /*
+    auto completed = std::async(std::launch::async, [=, &data1, &pool]() {   
+        return computeMandel(5, 5, 1, data1, 0, 0, zoom, gammaval, true, pool); 
+    });
+*/
+
+    std::promise<bool> promise;
+    std::future<bool> completed = promise.get_future();
+    promise.set_value(true);
+
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, scrwidth, scrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.data());
 
 
@@ -170,6 +174,8 @@ void runGraphicsEngine()
     ourShader.use(); // don't forget to activate/use the shader before setting uniforms!
     ourShader.setInt("texture1", 0);
     ourShader.setInt("texture2", 1);
+
+    auto dataCopy = data1;
 
     // render loop
     // -----------
@@ -180,21 +186,27 @@ void runGraphicsEngine()
         if (status == std::future_status::ready && computeNewFrame == true) {
             computeNewFrame = false;
             if (!completed.get() == true) break;
-            completed.share();
+            // At this point, ensure no tasks are still writing to data1.
             oldscrwidth = scrwidth;
             oldscrheight = scrheight;
-            completed = std::async(std::launch::async, [&]() {   
-                return computeMandel(scrwidth, scrheight, iters, data1, offsetx, offsety, zoom, gammaval, pool); 
+
+            data1.resize(oldscrheight*oldscrwidth);
+            pool.purge();
+            completed = std::async(std::launch::async, [=, &data1, &pool]() {   
+                return computeMandel(oldscrwidth, oldscrheight, iters, data1, offsetx, offsety, zoom, gammaval, true, pool); 
             });
         }
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, oldscrwidth, oldscrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.data());
+        // std::cout << "dfndsijbnfi----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
+        dataCopy = data1;
+        dataCopy.resize(oldscrwidth*oldscrheight);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, oldscrwidth, oldscrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, dataCopy.data());
         // input
         // -----
         processInput(window);
 
         // render
         // ------
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // bind textures on corresponding texture units
@@ -212,7 +224,7 @@ void runGraphicsEngine()
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     // optional: de-allocate all resources once they've outlived their purpose:
@@ -248,7 +260,7 @@ void processInput(GLFWwindow *window)
 }
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     mpf_t temp3, temp4, zoomFactor;
-    mpf_init_set_d(zoomFactor, 5);
+    mpf_init_set_d(zoomFactor, 10);
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         double mousexpos, mouseypos;
         int windowx, windowy;
@@ -265,17 +277,26 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
         mpf_div(zoom, zoom, zoomFactor);
         gmp_printf("%#Fe | %#Fe | %#Fe\n", offsetx, offsety, zoom);
+        computeNewFrame = true;
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
         mpf_mul(zoom, zoom, zoomFactor);
         gmp_printf("%#Fe | %#Fe | %#Fe\n", offsetx, offsety, zoom);
+        computeNewFrame = true;
     }
-    computeNewFrame = true;
+    if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
+        computeNewFrame = true;
+    }
+    double zoomd = mpf_get_d(zoom);
+    long bitsl = -std::log2(zoomd);
+    bitsl = (bitsl >= 0) * bitsl;
+    bitsl = bitsl/32 * 32 + 64;
+    mpf_set_default_prec(bitsl);
+
 }
 void scroll_callback(GLFWwindow* window, double scrollxoffset, double scrollyoffset) {
     gammaval *= std::exp(scrollyoffset/20);
     std::cout << gammaval << std::endl;
-    computeNewFrame = true;
 }
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------

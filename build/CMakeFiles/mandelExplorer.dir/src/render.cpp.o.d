@@ -1,7 +1,7 @@
 CMakeFiles/mandelExplorer.dir/src/render.cpp.o: \
   /home/samb/vscode/mandelExplorer/src/render.cpp \
   /home/samb/vscode/mandelExplorer/src/../src/glad/glad.h \
-  /usr/include/KHR/khrplatform.h /usr/lib/clang/18/include/stdint.h \
+  /usr/include/KHR/khrplatform.h /usr/lib/clang/19/include/stdint.h \
   /usr/include/stdint.h /usr/include/bits/libc-header-start.h \
   /usr/include/features.h /usr/include/features-time64.h \
   /usr/include/bits/wordsize.h /usr/include/bits/timesize.h \
@@ -11,14 +11,15 @@ CMakeFiles/mandelExplorer.dir/src/render.cpp.o: \
   /usr/include/bits/typesizes.h /usr/include/bits/time64.h \
   /usr/include/bits/wchar.h /usr/include/bits/stdint-intn.h \
   /usr/include/bits/stdint-uintn.h /usr/include/bits/stdint-least.h \
-  /usr/include/GLFW/glfw3.h /usr/lib/clang/18/include/stddef.h \
-  /usr/lib/clang/18/include/__stddef_ptrdiff_t.h \
-  /usr/lib/clang/18/include/__stddef_size_t.h \
-  /usr/lib/clang/18/include/__stddef_wchar_t.h \
-  /usr/lib/clang/18/include/__stddef_null.h \
-  /usr/lib/clang/18/include/__stddef_nullptr_t.h \
-  /usr/lib/clang/18/include/__stddef_max_align_t.h \
-  /usr/lib/clang/18/include/__stddef_offsetof.h \
+  /usr/include/GLFW/glfw3.h /usr/lib/clang/19/include/stddef.h \
+  /usr/lib/clang/19/include/__stddef_header_macro.h \
+  /usr/lib/clang/19/include/__stddef_ptrdiff_t.h \
+  /usr/lib/clang/19/include/__stddef_size_t.h \
+  /usr/lib/clang/19/include/__stddef_wchar_t.h \
+  /usr/lib/clang/19/include/__stddef_null.h \
+  /usr/lib/clang/19/include/__stddef_nullptr_t.h \
+  /usr/lib/clang/19/include/__stddef_max_align_t.h \
+  /usr/lib/clang/19/include/__stddef_offsetof.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/chrono \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/requires_hosted.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu/bits/c++config.h \
@@ -59,8 +60,8 @@ CMakeFiles/mandelExplorer.dir/src/render.cpp.o: \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/postypes.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/cwchar \
   /usr/include/wchar.h /usr/include/bits/floatn.h \
-  /usr/include/bits/floatn-common.h /usr/lib/clang/18/include/stdarg.h \
-  /usr/lib/clang/18/include/__stdarg___gnuc_va_list.h \
+  /usr/include/bits/floatn-common.h /usr/lib/clang/19/include/stdarg.h \
+  /usr/lib/clang/19/include/__stdarg___gnuc_va_list.h \
   /usr/include/bits/types/wint_t.h /usr/include/bits/types/mbstate_t.h \
   /usr/include/bits/types/__mbstate_t.h /usr/include/bits/types/__FILE.h \
   /usr/include/bits/types/FILE.h \
@@ -94,6 +95,13 @@ CMakeFiles/mandelExplorer.dir/src/render.cpp.o: \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu/bits/gthr.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/x86_64-pc-linux-gnu/bits/gthr-default.h \
   /usr/include/pthread.h /usr/include/sched.h /usr/include/bits/sched.h \
+  /usr/include/linux/sched/types.h /usr/include/linux/types.h \
+  /usr/include/asm/types.h /usr/include/asm-generic/types.h \
+  /usr/include/asm-generic/int-ll64.h /usr/include/asm/bitsperlong.h \
+  /usr/include/asm-generic/bitsperlong.h \
+  /usr/include/linux/posix_types.h /usr/include/linux/stddef.h \
+  /usr/include/asm/posix_types.h /usr/include/asm/posix_types_64.h \
+  /usr/include/asm-generic/posix_types.h \
   /usr/include/bits/types/struct_sched_param.h \
   /usr/include/bits/cpu-set.h /usr/include/bits/pthreadtypes.h \
   /usr/include/bits/thread-shared-types.h \
@@ -193,7 +201,6 @@ CMakeFiles/mandelExplorer.dir/src/render.cpp.o: \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/enable_special_members.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/span \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/variant \
-  /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/ext/aligned_buffer.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/ranges_algobase.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/unicode.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/stl_algo.h \
@@ -214,6 +221,7 @@ CMakeFiles/mandelExplorer.dir/src/render.cpp.o: \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/shared_ptr_base.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/allocated_ptr.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/unique_ptr.h \
+  /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/ext/aligned_buffer.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/ext/concurrence.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/align.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/chrono_io.h \
@@ -230,7 +238,7 @@ CMakeFiles/mandelExplorer.dir/src/render.cpp.o: \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/atomic_lockfree_defines.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/atomic_wait.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/climits \
-  /usr/lib/clang/18/include/limits.h /usr/include/limits.h \
+  /usr/lib/clang/19/include/limits.h /usr/include/limits.h \
   /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h \
   /usr/include/linux/limits.h /usr/include/bits/posix2_lim.h \
   /usr/include/bits/xopen_lim.h /usr/include/bits/uio_lim.h \
@@ -258,7 +266,7 @@ CMakeFiles/mandelExplorer.dir/src/render.cpp.o: \
   /usr/include/math.h /usr/include/bits/math-vector.h \
   /usr/include/bits/libm-simd-decl-stubs.h \
   /usr/include/bits/flt-eval-method.h /usr/include/bits/fp-logb.h \
-  /usr/include/bits/fp-fast.h \
+  /usr/include/bits/fp-fast.h /usr/include/bits/mathcalls-macros.h \
   /usr/include/bits/mathcalls-helper-functions.h \
   /usr/include/bits/mathcalls.h /usr/include/bits/mathcalls-narrow.h \
   /usr/include/bits/iscanonical.h \
@@ -296,7 +304,7 @@ CMakeFiles/mandelExplorer.dir/src/render.cpp.o: \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/memory \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/stl_raw_storage_iter.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/shared_ptr_atomic.h \
-  /usr/lib/clang/18/include/sanitizer/tsan_interface.h \
+  /usr/lib/clang/19/include/sanitizer/tsan_interface.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/backward/auto_ptr.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/ranges_uninitialized.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/out_ptr.h \
@@ -316,15 +324,16 @@ CMakeFiles/mandelExplorer.dir/src/render.cpp.o: \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/bits/ranges_algo.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/pstl/glue_algorithm_defs.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/cfloat \
-  /usr/lib/clang/18/include/float.h \
+  /usr/lib/clang/19/include/float.h \
   /home/samb/vscode/mandelExplorer/src/stb_image.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/stdlib.h \
-  /usr/lib/clang/18/include/__stdarg_va_list.h \
-  /usr/lib/clang/18/include/__stdarg_va_arg.h \
-  /usr/lib/clang/18/include/__stdarg___va_copy.h \
-  /usr/lib/clang/18/include/__stdarg_va_copy.h \
+  /usr/lib/clang/19/include/__stdarg_header_macro.h \
+  /usr/lib/clang/19/include/__stdarg_va_list.h \
+  /usr/lib/clang/19/include/__stdarg_va_arg.h \
+  /usr/lib/clang/19/include/__stdarg___va_copy.h \
+  /usr/lib/clang/19/include/__stdarg_va_copy.h \
   /usr/bin/../lib64/gcc/x86_64-pc-linux-gnu/14.2.1/../../../../include/c++/14.2.1/math.h \
-  /usr/lib/clang/18/include/emmintrin.h \
-  /usr/lib/clang/18/include/xmmintrin.h \
-  /usr/lib/clang/18/include/mmintrin.h \
-  /usr/lib/clang/18/include/mm_malloc.h
+  /usr/lib/clang/19/include/emmintrin.h \
+  /usr/lib/clang/19/include/xmmintrin.h \
+  /usr/lib/clang/19/include/mmintrin.h \
+  /usr/lib/clang/19/include/mm_malloc.h

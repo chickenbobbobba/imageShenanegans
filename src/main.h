@@ -19,5 +19,5 @@ struct HSVd {
 };
 
 
-bool computeMandel(int sizex, int sizey, long long maxIter, std::vector<colour8>& data, mpf_t offsetx, mpf_t offsety, mpf_t zoom, double gammaval, ThreadPool& pool);
+bool computeMandel(int sizex, int sizey, long long maxIter, std::vector<colour8>& data, mpf_t offsetx, mpf_t offsety, mpf_t zoom, double gammaval, bool accurateColouring, ThreadPool& pool);
 std::string calcRawImg(int32_t width, int32_t height, const std::vector<colour8>& data);

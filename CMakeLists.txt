@@ -11,9 +11,9 @@ set(CMAKE_MAKE_PROGRAM mandelExplorer)
 find_package(glfw3 3.3 REQUIRED)
 find_package(OpenGL REQUIRED)
 
-set(CMAKE_BUILD_TYPE Debug)
-
 file(GLOB_RECURSE APP_SOURCES "src/*.c*")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 add_executable(mandelExplorer ${APP_SOURCES})
 target_link_libraries(mandelExplorer glfw OpenGL::GL mpfr gmp)
