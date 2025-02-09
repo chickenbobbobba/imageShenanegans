@@ -94,24 +94,6 @@ HSVd computeMandelPosition(mpf_t cr, mpf_t ci, mpf_t zoom, long long maxIter, do
             goto cleanup;
         }
         iter++;
-        if(accurateColouring) {
-            mandelIterate(zr, zi, cr, ci, zrsqu, zisqu, temp);
-            mpf_add(temp, zrsqu, zisqu);
-            if (mpf_cmp(temp, four) > 0) {
-                if (mpf_cmp(zr, zero) != 0) mpf_div(temp, zi, zr);
-                else mpf_set(temp, inf);
-                tempd = mpf_get_d(temp);
-                result = {std::atan(tempd), 0.5*std::exp(-gammaval*iter), 1-std::exp(-gammaval*iter)};
-                goto cleanup;
-            }
-            iter++;
-            
-            mandelIterate(z2r, z2i, cr, ci, z2rsqu, z2isqu, temp);
-            if (mpf_cmp(z2r, zr) == 0 && mpf_cmp(z2i, zi) == 0) {
-                result = {0, 0, 0};
-                goto cleanup;
-            }
-        }
     }
     result = {0, 0, 0};
 
