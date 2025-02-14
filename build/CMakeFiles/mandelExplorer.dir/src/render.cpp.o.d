@@ -1,4 +1,5 @@
 CMakeFiles/mandelExplorer.dir/src/render.cpp.o: \
+  /usr/lib/clang/19/share/asan_ignorelist.txt \
   /home/samb/vscode/mandelExplorer/src/render.cpp \
   /home/samb/vscode/mandelExplorer/src/../src/glad/glad.h \
   /usr/include/KHR/khrplatform.h /usr/lib/clang/19/include/stdint.h \

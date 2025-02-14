@@ -13,5 +13,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = 
 
-CXX_FLAGS = -g -std=c++23
+CXX_FLAGS =  -fsanitize=address -g -std=c++23
 

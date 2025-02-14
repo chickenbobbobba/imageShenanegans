@@ -1,21 +1,18 @@
 #include "../src/glad/glad.h"
 #include <GLFW/glfw3.h>
-
 #include <chrono>
 #include <future>
 #include <gmp.h>
 #include <iostream>
-
 #include <stdexcept>
 #include <string>
 #include <cassert>
 #include <cmath>
 #include <thread>
-
+#include <vector>
 #include "utils.h"
 #include "render.h"
 #include "main.h"
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -28,8 +25,10 @@ mpf_t offsetx;
 mpf_t offsety;
 mpf_t zoom;
 double gammaval = 0.01;
-long long iters = 100;
+long long iters = 10000;
 bool computeNewFrame;
+long long unsigned int mandelFrameID = 0;
+
 void runGraphicsEngine()
 {
     mpf_init_set_d(offsetx, -0.75);
@@ -151,16 +150,11 @@ void runGraphicsEngine()
     // load image, create texture
     int scrwidth, scrheight;
     glfwGetWindowSize(window, &scrwidth, &scrheight);
-    std::vector<colour8> data1(scrwidth * scrheight, {255, 255, 255});
+    std::vector<colour8> data1(scrwidth * scrheight);
 
     int oldscrwidth, oldscrheight;
 
     ThreadPool pool(std::thread::hardware_concurrency());
-    /*
-    auto completed = std::async(std::launch::async, [=, &data1, &pool]() {   
-        return computeMandel(5, 5, 1, data1, 0, 0, zoom, gammaval, true, pool); 
-    });
-*/
 
     std::promise<bool> promise;
     std::future<bool> completed = promise.get_future();
@@ -168,14 +162,11 @@ void runGraphicsEngine()
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, scrwidth, scrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.data());
 
-
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
     // -------------------------------------------------------------------------------------------
     ourShader.use(); // don't forget to activate/use the shader before setting uniforms!
     ourShader.setInt("texture1", 0);
     ourShader.setInt("texture2", 1);
-
-    auto dataCopy = data1;
 
     // render loop
     // -----------
@@ -183,25 +174,23 @@ void runGraphicsEngine()
     {   
         glfwGetWindowSize(window, &scrwidth, &scrheight);
         auto status = completed.wait_for(std::chrono::seconds(0));
-        if (status == std::future_status::ready && computeNewFrame == true) {
+        if (computeNewFrame == true) {
             computeNewFrame = false;
             if (!completed.get() == true) break;
             // At this point, ensure no tasks are still writing to data1.
             oldscrwidth = scrwidth;
             oldscrheight = scrheight;
-
-            data1.resize(oldscrheight*oldscrwidth);
             pool.purge();
-            // ThreadPool mandelPool(std::thread::hardware_concurrency());
-            completed = std::async(std::launch::async, [=, &data1, &pool]() {   
-                return computeMandel(oldscrwidth, oldscrheight, iters, data1, offsetx, offsety, zoom, gammaval, true, pool); 
-                // mandelPool.shutdown();
+            mandelFrameID++;
+            completed = std::async(std::launch::async, [=, &data1, &pool]() {
+                data1.resize(oldscrwidth*oldscrheight);
+                auto result = computeMandel(oldscrwidth, oldscrheight, iters, data1, offsetx, offsety, zoom, gammaval, true, pool, mandelFrameID);
+                return result;
             });
         }
-        // std::cout << "dfndsijbnfi----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
-        dataCopy = data1;
-        dataCopy.resize(oldscrwidth*oldscrheight);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, oldscrwidth, oldscrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, dataCopy.data());
+        //dataCopy = data1;
+        //dataCopy.resize(oldscrwidth*oldscrheight);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, oldscrwidth, oldscrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.data());
         // input
         // -----
         processInput(window);
@@ -249,13 +238,13 @@ void processInput(GLFWwindow *window)
         computeNewFrame = true;
     }
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-        iters *= 1.5;
+        iters *= 1.1;
         std::cout << "max iters: " << iters << std::endl;
         computeNewFrame = true;
     }
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
         std::cout << "max iters: " << iters << std::endl;
-        iters *= 0.66666;
+        iters /= 1.1;
         computeNewFrame = true;
     }
 
@@ -278,12 +267,16 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         mpf_sub(offsety, offsety, temp4);
 
         mpf_div(zoom, zoom, zoomFactor);
-        gmp_printf("%#Fe | %#Fe | %#Fe\n", offsetx, offsety, zoom);
+        unsigned long prec_bits = mpf_get_prec(zoom);
+        unsigned long digits = (unsigned long)std::ceil(prec_bits * 0.30103);
+        gmp_printf("%.*Ff | %.*Ff | %#Fe\n", digits, offsetx, digits, offsety, zoom);
         computeNewFrame = true;
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
         mpf_mul(zoom, zoom, zoomFactor);
-        gmp_printf("%#Fe | %#Fe | %#Fe\n", offsetx, offsety, zoom);
+        unsigned long prec_bits = mpf_get_prec(zoom);
+        unsigned long digits = (unsigned long)std::ceil(prec_bits * 0.30103);
+        gmp_printf("%.*Ff | %.*Ff | %#Fe\n", digits, offsetx, digits, offsety, zoom);
         computeNewFrame = true;
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
@@ -295,6 +288,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     bitsl = bitsl/32 * 32 + 64;
     mpf_set_default_prec(bitsl);
 
+    mpf_set_prec(offsetx, bitsl);
+    mpf_set_prec(offsety, bitsl);
+    mpf_set_prec(zoom, bitsl);
+
+    std::cout << "bits: " << bitsl << "\n";
 }
 void scroll_callback(GLFWwindow* window, double scrollxoffset, double scrollyoffset) {
     gammaval *= std::exp(scrollyoffset/20);

@@ -456,7 +456,8 @@ CMakeFiles/mandelExplorer.dir/src/main.cpp.o: /home/samb/vscode/mandelExplorer/s
   /usr/lib/clang/19/include/sanitizer/tsan_interface.h \
   /usr/lib/clang/19/include/stdarg.h \
   /usr/lib/clang/19/include/stddef.h \
-  /usr/lib/clang/19/include/stdint.h
+  /usr/lib/clang/19/include/stdint.h \
+  /usr/lib/clang/19/share/asan_ignorelist.txt
 
 CMakeFiles/mandelExplorer.dir/src/render.cpp.o: /home/samb/vscode/mandelExplorer/src/render.cpp \
   /home/samb/vscode/mandelExplorer/src/glad/glad.h \
@@ -853,25 +854,37 @@ CMakeFiles/mandelExplorer.dir/src/render.cpp.o: /home/samb/vscode/mandelExplorer
   /usr/lib/clang/19/include/stdarg.h \
   /usr/lib/clang/19/include/stddef.h \
   /usr/lib/clang/19/include/stdint.h \
-  /usr/lib/clang/19/include/xmmintrin.h
+  /usr/lib/clang/19/include/xmmintrin.h \
+  /usr/lib/clang/19/share/asan_ignorelist.txt
 
-CMakeFiles/mandelExplorer.dir/src/stb_image.cpp.o: /home/samb/vscode/mandelExplorer/src/stb_image.cpp
+CMakeFiles/mandelExplorer.dir/src/stb_image.cpp.o: /home/samb/vscode/mandelExplorer/src/stb_image.cpp \
+  /usr/lib/clang/19/share/asan_ignorelist.txt
 
-CMakeFiles/mandelExplorer.dir/src/utils.cpp.o: /home/samb/vscode/mandelExplorer/src/utils.cpp
+CMakeFiles/mandelExplorer.dir/src/utils.cpp.o: /home/samb/vscode/mandelExplorer/src/utils.cpp \
+  /usr/lib/clang/19/share/asan_ignorelist.txt
 
 mandelExplorer: /usr/lib64/Scrt1.o \
   /usr/lib64/crti.o \
   /usr/lib64/crtn.o \
   /usr/lib64/libc.so \
+  /usr/lib64/libdl.a \
   /usr/lib64/libgcc_s.so \
   /usr/lib64/libgcc_s.so.1 \
   /usr/lib64/libgmp.so \
   /usr/lib64/libm.so \
   /usr/lib64/libmpfr.so \
+  /usr/lib64/libpthread.a \
+  /usr/lib64/libresolv.so \
+  /usr/lib64/librt.a \
   /usr/lib64/libstdc++.so \
   /usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtbeginS.o \
   /usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o \
   /usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/libgcc.a \
+  /usr/lib/clang/19/lib/linux/libclang_rt.asan-x86_64.a \
+  /usr/lib/clang/19/lib/linux/libclang_rt.asan-x86_64.a.syms \
+  /usr/lib/clang/19/lib/linux/libclang_rt.asan_cxx-x86_64.a \
+  /usr/lib/clang/19/lib/linux/libclang_rt.asan_cxx-x86_64.a.syms \
+  /usr/lib/clang/19/lib/linux/libclang_rt.asan_static-x86_64.a \
   /usr/lib/ld-linux-x86-64.so.2 \
   /usr/lib/libGLX.so \
   /usr/lib/libGLdispatch.so.0 \
@@ -905,8 +918,6 @@ CMakeFiles/mandelExplorer.dir/src/render.cpp.o:
 
 CMakeFiles/mandelExplorer.dir/src/main.cpp.o:
 
-/usr/lib32/libXdmcp.so.6:
-
 /usr/lib32/libGLdispatch.so.0:
 
 /usr/lib/libmvec.so.1:
@@ -925,11 +936,23 @@ CMakeFiles/mandelExplorer.dir/src/main.cpp.o:
 
 /usr/lib/libGLdispatch.so.0:
 
+/usr/lib/clang/19/lib/linux/libclang_rt.asan_static-x86_64.a:
+
+/usr/lib/clang/19/lib/linux/libclang_rt.asan_cxx-x86_64.a.syms:
+
+/usr/lib32/libXdmcp.so.6:
+
+/usr/lib/clang/19/lib/linux/libclang_rt.asan_cxx-x86_64.a:
+
+/usr/lib/clang/19/lib/linux/libclang_rt.asan-x86_64.a:
+
 /usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/libgcc.a:
 
 /usr/lib64/gcc/x86_64-pc-linux-gnu/14.2.1/crtendS.o:
 
 /usr/lib64/libstdc++.so:
+
+/usr/lib64/libpthread.a:
 
 /usr/lib64/libmpfr.so:
 
@@ -959,6 +982,8 @@ CMakeFiles/mandelExplorer.dir/src/main.cpp.o:
 
 /home/samb/vscode/mandelExplorer/src/stb_image.h:
 
+/usr/lib/clang/19/share/asan_ignorelist.txt:
+
 /usr/lib/clang/19/include/sanitizer/tsan_interface.h:
 
 /usr/lib/clang/19/include/float.h:
@@ -976,6 +1001,8 @@ CMakeFiles/mandelExplorer.dir/src/main.cpp.o:
 /usr/include/time.h:
 
 /usr/include/sys/single_threaded.h:
+
+/usr/lib64/libdl.a:
 
 /usr/include/semaphore.h:
 
@@ -1243,6 +1270,8 @@ CMakeFiles/mandelExplorer.dir/src/main.cpp.o:
 
 /usr/include/strings.h:
 
+/usr/lib64/libresolv.so:
+
 /usr/include/c++/14.2.1/bits/unique_lock.h:
 
 /usr/include/stdlib.h:
@@ -1454,6 +1483,8 @@ CMakeFiles/mandelExplorer.dir/src/glad.c.o:
 /usr/include/bits/stdio_lim.h:
 
 /usr/include/c++/14.2.1/bits/predefined_ops.h:
+
+/usr/lib/clang/19/lib/linux/libclang_rt.asan-x86_64.a.syms:
 
 /usr/include/c++/14.2.1/bits/functexcept.h:
 
@@ -1686,6 +1717,8 @@ CMakeFiles/mandelExplorer.dir/src/glad.c.o:
 /usr/include/c++/14.2.1/bit:
 
 /usr/include/c++/14.2.1/bits/vector.tcc:
+
+/usr/lib64/librt.a:
 
 /usr/include/c++/14.2.1/cstddef:
 

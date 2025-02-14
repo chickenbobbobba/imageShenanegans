@@ -7,25 +7,25 @@
 },
 {
   "directory": "/home/samb/vscode/mandelExplorer/build",
-  "command": "/usr/bin/clang++   -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/main.cpp.o -c /home/samb/vscode/mandelExplorer/src/main.cpp",
+  "command": "/usr/bin/clang++    -fsanitize=address -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/main.cpp.o -c /home/samb/vscode/mandelExplorer/src/main.cpp",
   "file": "/home/samb/vscode/mandelExplorer/src/main.cpp",
   "output": "CMakeFiles/mandelExplorer.dir/src/main.cpp.o"
 },
 {
   "directory": "/home/samb/vscode/mandelExplorer/build",
-  "command": "/usr/bin/clang++   -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/render.cpp.o -c /home/samb/vscode/mandelExplorer/src/render.cpp",
+  "command": "/usr/bin/clang++    -fsanitize=address -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/render.cpp.o -c /home/samb/vscode/mandelExplorer/src/render.cpp",
   "file": "/home/samb/vscode/mandelExplorer/src/render.cpp",
   "output": "CMakeFiles/mandelExplorer.dir/src/render.cpp.o"
 },
 {
   "directory": "/home/samb/vscode/mandelExplorer/build",
-  "command": "/usr/bin/clang++   -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/stb_image.cpp.o -c /home/samb/vscode/mandelExplorer/src/stb_image.cpp",
+  "command": "/usr/bin/clang++    -fsanitize=address -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/stb_image.cpp.o -c /home/samb/vscode/mandelExplorer/src/stb_image.cpp",
   "file": "/home/samb/vscode/mandelExplorer/src/stb_image.cpp",
   "output": "CMakeFiles/mandelExplorer.dir/src/stb_image.cpp.o"
 },
 {
   "directory": "/home/samb/vscode/mandelExplorer/build",
-  "command": "/usr/bin/clang++   -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/utils.cpp.o -c /home/samb/vscode/mandelExplorer/src/utils.cpp",
+  "command": "/usr/bin/clang++    -fsanitize=address -g -std=c++23 -o CMakeFiles/mandelExplorer.dir/src/utils.cpp.o -c /home/samb/vscode/mandelExplorer/src/utils.cpp",
   "file": "/home/samb/vscode/mandelExplorer/src/utils.cpp",
   "output": "CMakeFiles/mandelExplorer.dir/src/utils.cpp.o"
 }

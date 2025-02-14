@@ -13,7 +13,7 @@ find_package(OpenGL REQUIRED)
 
 file(GLOB_RECURSE APP_SOURCES "src/*.c*")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 
 add_executable(mandelExplorer ${APP_SOURCES})
 target_link_libraries(mandelExplorer glfw OpenGL::GL mpfr gmp)

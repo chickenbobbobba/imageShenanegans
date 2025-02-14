@@ -1,4 +1,3 @@
-#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
@@ -8,7 +7,6 @@
 #include <cstdint>
 #include <sstream>
 #include <sys/types.h>
-#include <thread>
 #include <vector>
 #include <unistd.h>
 #include <gmpxx.h>
@@ -17,6 +15,7 @@
 
 int printThreshold;
 int errorcount = 0;
+long long unsigned int globalMandelFrameID;  
 
 void writeRawImg(std::int32_t width, std::int32_t height, const std::vector<colour8>& data) {
     std::stringstream header;
@@ -30,14 +29,6 @@ void writeRawImg(std::int32_t width, std::int32_t height, const std::vector<colo
         file.put(data[i].b);
     }
     file.close();
-}
-
-float randOffset(int sizex) {
-    double randConst = (1-2*(double)rand()/(double)RAND_MAX);
-    if (randConst > 0)
-        return (sizex/600.0)*std::pow(3, randConst) - 1;
-    else 
-        return -(sizex/600.0)*std::pow(3, -randConst) + 1;
 }
 
 void mandelIterate(mpf_t zr, mpf_t zi, const mpf_t cr, const mpf_t ci, mpf_t zrsqu, mpf_t zisqu, mpf_t temp) {
@@ -80,7 +71,7 @@ HSVd computeMandelPosition(mpf_t cr, mpf_t ci, mpf_t zoom, long long maxIter, do
     mpf_init_set_d(zero, 0.0);
     mpf_init_set_d(inf, 99999999999999999.9);
     
-    long long iter = 0;
+    long long iter = 0; 
     HSVd result;
     
     while (iter < maxIter) {
@@ -150,7 +141,7 @@ colour8 HSVtoRGB(float h, float s, float v) {
 colour8 computeColour(HSVd hsv) {
     // static_cast<uint8_t>(255-255*std::exp(-gammaval*iter)),
     return {
-        HSVtoRGB(hsv.h, hsv.s, hsv.v)
+        HSVtoRGB(hsv.h, hsv.s/2, hsv.v)
     };
 }
 
@@ -158,7 +149,15 @@ void colourMandelScreenRegion(std::vector<colour8>& data,
                             int boleftx, int bolefty, int toprightx, int toprighty, 
                             mpf_t zoom, int scrWidth, int scrHeight, double gammaval, 
                             bool accurateColouring, long long maxIter, ThreadPool& pool, 
-                            mpf_t viewMidX, mpf_t viewMidY, int depth=0) {
+                            mpf_t viewMidX, mpf_t viewMidY, long long unsigned int currentMandelFrameID, int depth=0) 
+    {
+    
+    if (currentMandelFrameID < globalMandelFrameID) {
+        //std::cout << "yoink\n";
+        //std::cout << currentMandelFrameID << " | " << globalMandelFrameID << "\n";
+        return;
+    }
+
     std::vector<colour8> results;
     mpf_t temp, cr, ci;
     mpf_init(cr);
@@ -180,16 +179,13 @@ void colourMandelScreenRegion(std::vector<colour8>& data,
         for (int j = boleftx; j < toprightx; j++) {
             int index = i * scrWidth + j;
             if (index < data.size() && index >= 0) {  // Bounds check
-                colour8 newColour = HSVtoRGB(colour.h, colour.s, colour.v);
-                data[index].r = newColour.r;
-                data[index].g = newColour.g;
-                data[index].b = newColour.b;
+                data[index] = computeColour(colour);
             }
         }
     }
     
     int counts = 0;
-    if (colour.v == 0 || accurateColouring) {
+    if ((colour.v == 0 || accurateColouring) && toprightx-boleftx > 5) {
         int stepsx = std::pow(toprightx-boleftx, 0.5);
         int stepsy = std::pow(toprighty-bolefty, 0.5);
         for (int i = 0; i < stepsx; i++) {
@@ -248,60 +244,49 @@ void colourMandelScreenRegion(std::vector<colour8>& data,
     depth++;
     if ((toprightx - boleftx) < 2 && (toprighty - bolefty) < 2) return;
 
-    if (toprightx-boleftx >= 0.5*log(scrWidth * scrHeight)) {
-        int priority = -depth;
+    if (toprightx-boleftx >= 0.25*log(scrWidth * scrHeight)) {
+        int priority = -depth + currentMandelFrameID * 100 - 10000;
         // bottom left
         pool.addTask([=, &data, &pool]() {
             colourMandelScreenRegion(data, boleftx, bolefty, midx, midy, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
         }, priority);
         //bottom right
         pool.addTask([=, &data, &pool]() {
             colourMandelScreenRegion(data, midx, bolefty, toprightx, midy, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
         }, priority);
         // top left
         pool.addTask([=, &data, &pool]() {
             colourMandelScreenRegion(data, boleftx, midy, midx, toprighty, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
         }, priority);
         //top right
         pool.addTask([=, &data, &pool]() {
             colourMandelScreenRegion(data, midx, midy, toprightx, toprighty, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
         }, priority);
     } else {
         if ((toprightx - boleftx) > (toprighty - bolefty)) {
             // Split vertically (left and right halves)
             colourMandelScreenRegion(data, boleftx, bolefty, midx, toprighty, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
             colourMandelScreenRegion(data, midx, bolefty, toprightx, toprighty, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
         } else {
             // Split horizontally (top and bottom halves)
             colourMandelScreenRegion(data, boleftx, bolefty, toprightx, midy, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
             colourMandelScreenRegion(data, boleftx, midy, toprightx, toprighty, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
         }
     }
 }
 
-bool computeMandel(int sizex, int sizey, long long maxIter, std::vector<colour8>& data, mpf_t offsetx, mpf_t offsety, mpf_t zoom, double gammaval, bool accurateColouring, ThreadPool& pool) {
-    double zoomd = mpf_get_d(zoom);
-    long bitsl = -std::log2(zoomd);
-    bitsl = (bitsl >= 0) * bitsl;
-    bitsl = bitsl/32 * 32 + 64;
-    std::cout << "bits: " << bitsl << "\n";
+bool computeMandel(int sizex, int sizey, long long maxIter, std::vector<colour8>& data, mpf_t offsetx, mpf_t offsety, mpf_t zoom, double gammaval, bool accurateColouring, ThreadPool& pool, long long unsigned int currentMandelFrameID) {
+    globalMandelFrameID = currentMandelFrameID;
+    colourMandelScreenRegion(data, 0, 0, sizex, sizey, zoom, sizex, sizey, gammaval, accurateColouring, maxIter, pool, offsetx, offsety, globalMandelFrameID, 0);
 
-    for (auto i : data) {
-        i = colour8{128, 128, 128};
-    }
-
-    colourMandelScreenRegion(data, 0, 0, sizex, sizey, zoom, sizex, sizey, gammaval, accurateColouring, maxIter, pool, offsetx, offsety);
-    while (pool.getNumBusyThreads() > 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
     return true;
 }
 
