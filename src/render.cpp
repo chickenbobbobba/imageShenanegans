@@ -269,14 +269,14 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         mpf_div(zoom, zoom, zoomFactor);
         unsigned long prec_bits = mpf_get_prec(zoom);
         unsigned long digits = (unsigned long)std::ceil(prec_bits * 0.30103);
-        gmp_printf("%.*Ff | %.*Ff | %#Fe\n", digits, offsetx, digits, offsety, zoom);
+        gmp_printf("r: %.*Ff \ni: %.*Ff \nzoom: %#Fe\n", digits, offsetx, digits, offsety, zoom);
         computeNewFrame = true;
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
         mpf_mul(zoom, zoom, zoomFactor);
         unsigned long prec_bits = mpf_get_prec(zoom);
         unsigned long digits = (unsigned long)std::ceil(prec_bits * 0.30103);
-        gmp_printf("%.*Ff | %.*Ff | %#Fe\n", digits, offsetx, digits, offsety, zoom);
+        gmp_printf("r: %.*Ff \ni: %.*Ff \nzoom: %#Fe\n", digits, offsetx, digits, offsety, zoom);
         computeNewFrame = true;
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
@@ -291,12 +291,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     mpf_set_prec(offsetx, bitsl);
     mpf_set_prec(offsety, bitsl);
     mpf_set_prec(zoom, bitsl);
-
-    std::cout << "bits: " << bitsl << "\n";
 }
 void scroll_callback(GLFWwindow* window, double scrollxoffset, double scrollyoffset) {
     gammaval *= std::exp(scrollyoffset/20);
-    std::cout << gammaval << std::endl;
+    //std::cout << gammaval << std::endl;
 }
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
