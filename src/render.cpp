@@ -154,7 +154,7 @@ void runGraphicsEngine()
 
     int oldscrwidth, oldscrheight;
 
-    ThreadPool pool(std::thread::hardware_concurrency());
+    ThreadPool pool(std::thread::hardware_concurrency() * 4);
 
     std::promise<bool> promise;
     std::future<bool> completed = promise.get_future();
@@ -168,11 +168,14 @@ void runGraphicsEngine()
     ourShader.setInt("texture1", 0);
     ourShader.setInt("texture2", 1);
 
+    std::vector<colour8> dataCopy;
+
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
     {   
         glfwGetWindowSize(window, &scrwidth, &scrheight);
+        data1.resize(oldscrwidth*oldscrheight);
         auto status = completed.wait_for(std::chrono::seconds(0));
         if (computeNewFrame == true) {
             computeNewFrame = false;
@@ -183,14 +186,13 @@ void runGraphicsEngine()
             pool.purge();
             mandelFrameID++;
             completed = std::async(std::launch::async, [=, &data1, &pool]() {
-                data1.resize(oldscrwidth*oldscrheight);
                 auto result = computeMandel(oldscrwidth, oldscrheight, iters, data1, offsetx, offsety, zoom, gammaval, true, pool, mandelFrameID);
                 return result;
             });
         }
-        //dataCopy = data1;
-        //dataCopy.resize(oldscrwidth*oldscrheight);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, oldscrwidth, oldscrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.data());
+        dataCopy = data1;
+        dataCopy.resize(oldscrwidth*oldscrheight);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, oldscrwidth, oldscrheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, dataCopy.data());
         // input
         // -----
         processInput(window);
@@ -269,14 +271,14 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         mpf_div(zoom, zoom, zoomFactor);
         unsigned long prec_bits = mpf_get_prec(zoom);
         unsigned long digits = (unsigned long)std::ceil(prec_bits * 0.30103);
-        gmp_printf("r: %.*Ff \ni: %.*Ff \nzoom: %#Fe\n", digits, offsetx, digits, offsety, zoom);
+        gmp_printf("r: %.*Ff \ni: %.*Ff \nzoom: %#Fe\nbits: %d\n", digits, offsetx, digits, offsety, zoom, prec_bits);
         computeNewFrame = true;
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
         mpf_mul(zoom, zoom, zoomFactor);
         unsigned long prec_bits = mpf_get_prec(zoom);
         unsigned long digits = (unsigned long)std::ceil(prec_bits * 0.30103);
-        gmp_printf("r: %.*Ff \ni: %.*Ff \nzoom: %#Fe\n", digits, offsetx, digits, offsety, zoom);
+        gmp_printf("r: %.*Ff \ni: %.*Ff \nzoom: %#Fe\nbits: %d\n", digits, offsetx, digits, offsety, zoom, prec_bits);
         computeNewFrame = true;
     }
     if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {

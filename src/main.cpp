@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
@@ -5,8 +6,10 @@
 #include <iostream>
 #include <fstream>
 #include <cstdint>
+#include <random>
 #include <sstream>
 #include <sys/types.h>
+#include <thread>
 #include <vector>
 #include <unistd.h>
 #include <gmpxx.h>
@@ -15,7 +18,10 @@
 
 int printThreshold;
 int errorcount = 0;
-long long unsigned int globalMandelFrameID;  
+std::atomic<long long unsigned int> globalMandelFrameID = 0; 
+
+std::random_device rd;
+std::mt19937 g(rd());
 
 void writeRawImg(std::int32_t width, std::int32_t height, const std::vector<colour8>& data) {
     std::stringstream header;
@@ -49,24 +55,11 @@ HSVd computeMandelPosition(mpf_t cr, mpf_t ci, mpf_t zoom, long long maxIter, do
     mpf_t zr, zi, zrsqu, zisqu, z2rsqu, z2isqu, z2r, z2i, four, zero, inf, sixtyfour;
     double tempd;
 
-    // calculate adequate bits for calculations 
-    mpf_init_set_d(sixtyfour, 64);
-    mpf_div(temp, zoom, sixtyfour);
-    tempd = mpf_get_d(temp);
-    long bits = -std::log2(tempd);
-    bits = (bits >= 0) * bits;
-    bits = bits/32 * 32 + 64;
-    mpf_set_default_prec(bits);
-
     // Set initial values
     mpf_init_set_d(zr, 0.0);
     mpf_init_set_d(zi, 0.0);
     mpf_init_set_d(zrsqu, 0.0);
     mpf_init_set_d(zisqu, 0.0);
-    mpf_init_set_d(z2rsqu, 0.0);
-    mpf_init_set_d(z2isqu, 0.0);
-    mpf_init_set_d(z2r, 0.0);
-    mpf_init_set_d(z2i, 0.0);
     mpf_init_set_d(four, 4.0);
     mpf_init_set_d(zero, 0.0);
     mpf_init_set_d(inf, 99999999999999999.9);
@@ -82,22 +75,15 @@ HSVd computeMandelPosition(mpf_t cr, mpf_t ci, mpf_t zoom, long long maxIter, do
             else mpf_set(temp, inf);
             tempd = mpf_get_d(temp);
             result = {std::atan(tempd), 0.5*std::exp(-gammaval*iter), 1-std::exp(-gammaval*iter)};
-            goto cleanup;
         }
         iter++;
     }
     result = {0, 0, 0};
 
-cleanup:
-    // Clear all MPFR variables in reverse order of initialization
     mpf_clear(sixtyfour);
     mpf_clear(four);
     mpf_clear(inf);
     mpf_clear(zero);
-    mpf_clear(z2i);
-    mpf_clear(z2r);
-    mpf_clear(z2isqu);
-    mpf_clear(z2rsqu);
     mpf_clear(zisqu);
     mpf_clear(zrsqu);
     mpf_clear(zi);
@@ -149,24 +135,27 @@ void colourMandelScreenRegion(std::vector<colour8>& data,
                             int boleftx, int bolefty, int toprightx, int toprighty, 
                             mpf_t zoom, int scrWidth, int scrHeight, double gammaval, 
                             bool accurateColouring, long long maxIter, ThreadPool& pool, 
-                            mpf_t viewMidX, mpf_t viewMidY, long long unsigned int currentMandelFrameID, int depth=0) 
+                            mpf_t viewMidX, mpf_t viewMidY, long long unsigned int currentMandelFrameID, int depth=0,
+                            bool bottomCheck = true, bool leftCheck = true, bool topCheck = true, bool rightCheck = true) 
     {
+    if (currentMandelFrameID < globalMandelFrameID) return;
     
-    if (currentMandelFrameID < globalMandelFrameID) {
-        //std::cout << "yoink\n";
-        //std::cout << currentMandelFrameID << " | " << globalMandelFrameID << "\n";
-        return;
-    }
-
     std::vector<colour8> results;
+    
+    double zoomd = mpf_get_d(zoom);
+    long bitsl = -std::log2(zoomd);
+    bitsl = (bitsl >= 0) * bitsl;
+    bitsl = bitsl/32 * 32 + 64;
+    mpf_set_default_prec(bitsl);
+
     mpf_t temp, cr, ci;
     mpf_init(cr);
     mpf_init(ci);
     mpf_init(temp);
-    
+
     int midx = (boleftx + toprightx) / 2;
     int midy = (bolefty + toprighty) / 2;
-
+    
     mpf_set_d(temp, (midx - scrWidth/2.0) / scrWidth);
     mpf_mul(temp, temp, zoom);
     mpf_add(cr, viewMidX, temp);
@@ -179,114 +168,133 @@ void colourMandelScreenRegion(std::vector<colour8>& data,
         for (int j = boleftx; j < toprightx; j++) {
             int index = i * scrWidth + j;
             if (index < data.size() && index >= 0) {  // Bounds check
+                if (currentMandelFrameID < globalMandelFrameID) return;
                 data[index] = computeColour(colour);
             }
         }
     }
     
     int counts = 0;
-    if ((colour.v == 0 || accurateColouring) && toprightx-boleftx > 5) {
-        int stepsx = std::pow(toprightx-boleftx, 0.5);
-        int stepsy = std::pow(toprighty-bolefty, 0.5);
-        for (int i = 0; i < stepsx; i++) {
-            if (counts > 0) break;
-            double scrxpos = std::lerp(boleftx, toprightx, (float)i/stepsx);
-            mpf_set_d(temp, (scrxpos - scrWidth/2.0) / scrWidth);
+    int countBottom = 0;
+    int countLeft = 0;
+    int countTop = 0;
+    int countRight = 0;
+    
+    if ((colour.v == 0 || accurateColouring) && toprightx-boleftx > 4) {
+        int stepsx = std::pow(toprightx-boleftx, 0.667);
+        int stepsy = std::pow(toprighty-bolefty, 0.667);
+
+        if (stepsx == 0) stepsx = 1;
+        if (stepsy == 0) stepsy = 1;
+
+        struct coord {
+            double x;
+            double y;
+            char bltr;
+        };
+        std::vector<coord> positions;
+        //bottom
+        if (bottomCheck == true) {
+            for (int i = 0; i < stepsx; i++) {
+                double scrxpos = std::lerp(boleftx, toprightx, (float)i/stepsx);
+                positions.push_back({(scrxpos - scrWidth/2.0) / scrWidth, (bolefty - scrHeight/2.0) / scrWidth, 0});
+            }
+        }
+        //left
+        if (leftCheck == true) {
+            for (int i = 0; i < stepsy; i++) {
+                double scrypos = std::lerp(bolefty, toprighty, (float)i/stepsy);
+                positions.push_back({(boleftx - scrWidth/2.0) / scrWidth, (scrypos - scrHeight/2.0) / scrWidth, 1});
+            }
+        }
+        //top
+        if (topCheck == true) {
+            for (int i = 0; i < stepsx; i++) {
+                double scrxpos = std::lerp(boleftx, toprightx, (float)i/stepsx);
+                positions.push_back({(scrxpos - scrWidth/2.0) / scrWidth, (toprighty - scrHeight/2.0) / scrWidth, 2});
+            }
+        }
+        //right
+        if (rightCheck == true) {
+            for (int i = 0; i < stepsy; i++) {
+                double scrypos = std::lerp(bolefty, toprighty, (float)i/stepsy);
+                positions.push_back({(toprightx - scrWidth/2.0) / scrWidth, (scrypos - scrHeight/2.0) / scrWidth, 3});
+            }
+        }
+        
+        std::shuffle(positions.begin(), positions.end(), g);
+        
+        for (int i = 0; i < positions.size(); i++) {
+            mpf_set_d(temp, positions[i].x);
             mpf_mul(temp, temp, zoom);
             mpf_add(cr, viewMidX, temp);
-            mpf_set_d(temp, (bolefty - scrHeight/2.0) / scrWidth);
+            mpf_set_d(temp, positions[i].y);
             mpf_mul(temp, temp, zoom);
             mpf_add(ci, viewMidY, temp);
-            if (computeMandelPosition(cr, ci, zoom, maxIter, gammaval, temp, accurateColouring).v != colour.v) counts++;
+            gmp_printf("r: %.*Ff i: %.*Ff \n", bitsl, cr, bitsl, ci);
+            auto result = computeMandelPosition(cr, ci, zoom, maxIter, gammaval, temp, accurateColouring);
+            if (result.v != colour.v) {
+                counts++;
+                break;
+            }
         }
-        for (int i = 0; i < stepsy; i++) {
-            if (counts > 0) break;
-            double scrypos = std::lerp(bolefty, toprighty, (float)i/stepsy);
-            mpf_set_d(temp, (boleftx - scrWidth/2.0) / scrWidth);
-            mpf_mul(temp, temp, zoom);
-            mpf_add(cr, viewMidX, temp);
-            mpf_set_d(temp, (scrypos - scrHeight/2.0) / scrWidth);
-            mpf_mul(temp, temp, zoom);
-            mpf_add(ci, viewMidY, temp);
-            if (computeMandelPosition(cr, ci, zoom, maxIter, gammaval, temp, accurateColouring).v != colour.v) counts++;
-        }
-        for (int i = 0; i < stepsx; i++) {
-            if (counts > 0) break;
-            double scrxpos = std::lerp(boleftx, toprightx, (float)i/stepsx);
-            mpf_set_d(temp, (scrxpos - scrWidth/2.0) / scrWidth);
-            mpf_mul(temp, temp, zoom);
-            mpf_add(cr, viewMidX, temp);
-            mpf_set_d(temp, (toprighty - scrHeight/2.0) / scrWidth);
-            mpf_mul(temp, temp, zoom);
-            mpf_add(ci, viewMidY, temp);
-            if (computeMandelPosition(cr, ci, zoom, maxIter, gammaval, temp, accurateColouring).v != colour.v) counts++;
-        }
-        for (int i = 0; i < stepsy; i++) {
-            if (counts > 0) break;
-            double scrypos = std::lerp(bolefty, toprighty, (float)i/stepsy);
-            mpf_set_d(temp, (toprightx - scrWidth/2.0) / scrWidth);
-            mpf_mul(temp, temp, zoom);
-            mpf_add(cr, viewMidX, temp);
-            mpf_set_d(temp, (scrypos - scrHeight/2.0) / scrWidth);
-            mpf_mul(temp, temp, zoom);
-            mpf_add(ci, viewMidY, temp);
-            if (computeMandelPosition(cr, ci, zoom, maxIter, gammaval, temp, accurateColouring).v != colour.v) counts++;
-        }
-        if (counts == 0) {
-            return;
-        }
+        
+    } else {
+        counts = 1;
     }
     
     mpf_clear(cr);
     mpf_clear(ci);
     mpf_clear(temp);
+    if (counts == 0) {
+        return;
+    }
+    //std::cout << "----------" << std::endl;    
     // Calculate midpoints using both boundaries
     depth++;
-    if ((toprightx - boleftx) < 2 && (toprighty - bolefty) < 2) return;
+    if ((toprightx - boleftx < 2) && (toprighty - bolefty < 2)) return;
 
-    if (toprightx-boleftx >= 0.25*log(scrWidth * scrHeight)) {
-        int priority = -depth + currentMandelFrameID * 100 - 10000;
+    if (toprightx-boleftx >= 0.5*log(scrWidth * scrHeight)) {
+        int priority = -depth;
         // bottom left
         pool.addTask([=, &data, &pool]() {
             colourMandelScreenRegion(data, boleftx, bolefty, midx, midy, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth, true, true, true, true);
         }, priority);
         //bottom right
         pool.addTask([=, &data, &pool]() {
             colourMandelScreenRegion(data, midx, bolefty, toprightx, midy, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth, true, true, true, true);
         }, priority);
-        // top left
+        //top left
         pool.addTask([=, &data, &pool]() {
             colourMandelScreenRegion(data, boleftx, midy, midx, toprighty, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth, true, true, true, true);
         }, priority);
         //top right
         pool.addTask([=, &data, &pool]() {
             colourMandelScreenRegion(data, midx, midy, toprightx, toprighty, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
+                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth, true, true, true, true);
         }, priority);
     } else {
-        if ((toprightx - boleftx) > (toprighty - bolefty)) {
-            // Split vertically (left and right halves)
-            colourMandelScreenRegion(data, boleftx, bolefty, midx, toprighty, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
-            colourMandelScreenRegion(data, midx, bolefty, toprightx, toprighty, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
-        } else {
-            // Split horizontally (top and bottom halves)
-            colourMandelScreenRegion(data, boleftx, bolefty, toprightx, midy, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
-            colourMandelScreenRegion(data, boleftx, midy, toprightx, toprighty, zoom, scrWidth, scrHeight, 
-                                    gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth);
-        }
+        //bottom left
+        colourMandelScreenRegion(data, boleftx, bolefty, midx, midy, zoom, scrWidth, scrHeight, 
+                                gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth, true, true, true, true);
+        //bottom right
+        colourMandelScreenRegion(data, midx, bolefty, toprightx, midy, zoom, scrWidth, scrHeight, 
+                                gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth, true, true, true, true);
+        //top left
+        colourMandelScreenRegion(data, boleftx, midy, midx, toprighty, zoom, scrWidth, scrHeight, 
+                                gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth, true, true, true, true);
+        //top right
+        colourMandelScreenRegion(data, midx, midy, toprightx, toprighty, zoom, scrWidth, scrHeight, 
+                                gammaval, accurateColouring, maxIter, pool, viewMidX, viewMidY, currentMandelFrameID, depth, true, true, true, true);
     }
 }
 
 bool computeMandel(int sizex, int sizey, long long maxIter, std::vector<colour8>& data, mpf_t offsetx, mpf_t offsety, mpf_t zoom, double gammaval, bool accurateColouring, ThreadPool& pool, long long unsigned int currentMandelFrameID) {
     globalMandelFrameID = currentMandelFrameID;
     colourMandelScreenRegion(data, 0, 0, sizex, sizey, zoom, sizex, sizey, gammaval, accurateColouring, maxIter, pool, offsetx, offsety, globalMandelFrameID, 0);
-
     return true;
 }
 
